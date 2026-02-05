@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 RED="\e[31m"
 GREEN="\e[32m"
@@ -16,38 +16,41 @@ exec > >(tee -a "$LOGFILE") 2>&1
 
 echo "===== SOC Pulse System Preflight Check ====="
 
-# Root
+# Root check
 [[ $EUID -ne 0 ]] && fail "Run with sudo or root"
 
-# OS
+# OS check
 source /etc/os-release
 [[ "$ID" != "ubuntu" ]] && fail "Only Ubuntu supported"
 VER=${VERSION_ID%%.*}
 [[ "$VER" -lt 22 ]] && fail "Ubuntu 22.04+ required"
 ok "Ubuntu $VERSION_ID detected"
 
-# RAM
+# RAM check (warning based)
 RAM=$(free -g | awk '/Mem:/ {print $2}')
-[[ $RAM -lt 6 ]] && fail "RAM too low (${RAM}GB found — 8GB required)"
+[[ $RAM -lt 4 ]] && fail "RAM critically low (${RAM}GB)"
 [[ $RAM -lt 8 ]] && warn "RAM low (${RAM}GB) — performance may suffer" || ok "RAM ${RAM}GB OK"
 
-# Disk
+# Disk check (warning based)
 DISK=$(df -BG --output=avail / | tail -1 | tr -d 'G ')
-[[ $DISK -lt 50 ]] && fail "Disk too low (${DISK}GB free — 50GB required)"
-ok "Disk ${DISK}GB free"
+[[ $DISK -lt 30 ]] && fail "Disk critically low (${DISK}GB free)"
+[[ $DISK -lt 50 ]] && warn "Disk low (${DISK}GB) — recommend 50GB+" || ok "Disk ${DISK}GB free"
 
-# Internet (Wazuh repo check)
-curl -Is https://packages.wazuh.com >/dev/null || fail "No internet / Wazuh repo unreachable"
+# Internet check
+curl -Is https://packages.wazuh.com >/dev/null || fail "No internet or Wazuh repo unreachable"
 ok "Internet connectivity OK"
 
-# Ports
+# Port checks (warning only)
 for p in 443 1514 1515 55000; do
-  ss -lntup | grep -q ":$p " && fail "Port $p already in use"
+  if ss -lntup | grep -qw ":$p"; then
+    warn "Port $p already in use — may cause conflict"
+  else
+    ok "Port $p available"
+  fi
 done
-ok "Required ports free"
 
-# Existing Wazuh
-systemctl list-units | grep -q wazuh && warn "Existing Wazuh detected" || ok "No previous Wazuh found"
+# Existing Wazuh detection
+systemctl list-units | grep -q wazuh && warn "Existing Wazuh detected — clean install recommended" || ok "No previous Wazuh found"
 
 echo -e "${GREEN}Installing Wazuh latest stable (4.14 series)${RESET}"
 echo "===== System Ready for Installation ====="
@@ -65,7 +68,7 @@ success(){ echo -e "${GREEN}✔ $1${RESET}"; }
 error(){ echo -e "${RED}✖ $1${RESET}"; exit 1; }
 
 check_service(){
-systemctl is-active --quiet $1 && success "$1 running" || error "$1 failed"
+systemctl is-active --quiet "$1" && success "$1 running" || error "$1 failed"
 }
 
 banner
@@ -94,7 +97,7 @@ check_service wazuh-dashboard
 
 step "Retrieving dashboard credentials"
 PASSWORD=$(grep -i "password" /var/ossec/logs/install.log | tail -1 | awk '{print $NF}')
-IP=$(curl -s ifconfig.me)
+IP=$(curl -s https://api.ipify.org || hostname -I | awk '{print $1}')
 
 echo -e "${GREEN}
 ===========================================

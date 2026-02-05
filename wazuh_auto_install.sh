@@ -16,44 +16,49 @@ exec > >(tee -a "$LOGFILE") 2>&1
 
 echo "===== SOC Pulse System Preflight Check ====="
 
-# Root
-[[ $EUID -ne 0 ]] && fail "Run with sudo"
+# Root check
+[[ $EUID -ne 0 ]] && fail "Run with sudo or root"
 
-# OS
+# OS check
 source /etc/os-release
 [[ "$ID" != "ubuntu" ]] && fail "Only Ubuntu supported"
 VER=${VERSION_ID%%.*}
 [[ "$VER" -lt 22 ]] && fail "Ubuntu 22.04+ required"
 ok "Ubuntu $VERSION_ID detected"
 
-# RAM
+# RAM check (warning based)
 RAM=$(free -g | awk '/Mem:/ {print $2}')
-[[ $RAM -lt 4 ]] && fail "RAM critically low"
-[[ $RAM -lt 8 ]] && warn "RAM low (${RAM}GB)" || ok "RAM ${RAM}GB OK"
+[[ $RAM -lt 4 ]] && fail "RAM critically low (${RAM}GB)"
+[[ $RAM -lt 8 ]] && warn "RAM low (${RAM}GB) — performance may suffer" || ok "RAM ${RAM}GB OK"
 
-# Disk
+# Disk check (warning based)
 DISK=$(df -BG --output=avail / | tail -1 | tr -d 'G ')
-[[ $DISK -lt 30 ]] && fail "Disk critically low"
-[[ $DISK -lt 50 ]] && warn "Disk low (${DISK}GB)" || ok "Disk ${DISK}GB OK"
+[[ $DISK -lt 30 ]] && fail "Disk critically low (${DISK}GB free)"
+[[ $DISK -lt 50 ]] && warn "Disk low (${DISK}GB) — recommend 50GB+" || ok "Disk ${DISK}GB free"
 
-# Internet
-curl -Is https://packages.wazuh.com >/dev/null || fail "No internet"
-ok "Internet OK"
+# Internet check
+curl -Is https://packages.wazuh.com >/dev/null || fail "No internet or Wazuh repo unreachable"
+ok "Internet connectivity OK"
 
-# Ports (warning only)
+# Port checks (warning only)
 for p in 443 1514 1515 55000; do
-  ss -lntup | grep -qw ":$p" && warn "Port $p in use" || ok "Port $p free"
+  if ss -lntup | grep -qw ":$p"; then
+    warn "Port $p already in use — may cause conflict"
+  else
+    ok "Port $p available"
+  fi
 done
 
-# Old Wazuh
-systemctl list-units | grep -q wazuh && warn "Old Wazuh detected" || ok "Fresh system"
+# Existing Wazuh detection
+systemctl list-units | grep -q wazuh && warn "Existing Wazuh detected — clean install recommended" || ok "No previous Wazuh found"
 
-echo -e "${GREEN}System ready for Wazuh installation${RESET}"
+echo -e "${GREEN}Installing Wazuh latest stable (4.14 series)${RESET}"
+echo "===== System Ready for Installation ====="
 
 banner () {
 echo -e "${BLUE}
 ===========================================
-      SOC PULSE AUTOMATED DEPLOYMENT
+   WAZUH SOC AUTOMATED DEPLOYMENT SYSTEM
 ===========================================
 ${RESET}"
 }
@@ -68,7 +73,7 @@ systemctl is-active --quiet "$1" && success "$1 running" || error "$1 failed"
 
 banner
 
-step "Updating system"
+step "Updating system packages"
 apt update && apt upgrade -y
 success "System updated"
 
@@ -90,34 +95,19 @@ check_service wazuh-manager
 check_service wazuh-indexer
 check_service wazuh-dashboard
 
-# ----------------------------
-# AUTO PASSWORD RESET FEATURE
-# ----------------------------
-
-step "Setting dashboard password to admin/admin"
-
-sudo /usr/share/wazuh-indexer/plugins/opensearch-security/tools/wazuh-passwords-tool.sh \
--a -u admin -p admin
-
-success "Dashboard password set to admin"
-
-# ----------------------------
-
+step "Retrieving dashboard credentials"
+PASSWORD=$(grep -i "password" /var/ossec/logs/install.log | tail -1 | awk '{print $NF}')
 IP=$(curl -s https://api.ipify.org || hostname -I | awk '{print $1}')
 
 echo -e "${GREEN}
 ===========================================
- 🎉 SOC PULSE INSTALL COMPLETE 🎉
+ 🎉 SOC PULSE INSTALLATION COMPLETE 🎉
 ===========================================
 
-Dashboard URL:
-https://$IP
+Dashboard: https://$IP
+Username : admin
+Password : $PASSWORD
 
-Login:
-Username: admin
-Password: admin
-
-Log file:
-$LOGFILE
+Log file : $LOGFILE
 ===========================================
 ${RESET}"

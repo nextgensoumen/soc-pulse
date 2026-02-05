@@ -111,6 +111,90 @@ https://<YOUR_SERVER_IP>
 
 You can now navigate to the **Dashboard URL** in your browser and log in with the provided credentials.
 
+📖 **See [Password Management Guide](PASSWORD_MANAGEMENT.md) for instructions on changing credentials.**
+
+## 🛠 Maintenance & Daily Workflow
+
+### 🧠 Pro Tip: Service Management
+If services ever don't start automatically (rare), you can check their status and start them manually.
+
+**Check Status:**
+```bash
+sudo systemctl status wazuh-manager
+sudo systemctl status wazuh-indexer
+sudo systemctl status wazuh-dashboard
+```
+
+**Start Services (if stopped):**
+```bash
+sudo systemctl start wazuh-manager wazuh-indexer wazuh-dashboard
+```
+
+**Enable Auto-Start:**
+To ensure services run automatically on boot (SOC Pulse does this by default):
+```bash
+sudo systemctl enable wazuh-manager wazuh-indexer wazuh-dashboard
+```
+
+### ✅ Simple Daily Workflow
+This is the standard workflow for using your SOC lab effectively:
+
+1.  **Start your Server/VM** (e.g., Start EC2 instance).
+2.  **Open Browser**: Navigate to your Dashboard URL (`https://<YOUR_IP>`).
+3.  **Login**: Use the admin credentials saved during installation.
+4.  **Done!** No need to run the installer again.
+
+## 🔍 Check Wazuh Version
+To check which version of Wazuh is running on your server, use any of these (they all work — pick the easiest):
+
+### ✅ Method 1 — Most direct (recommended)
+```bash
+sudo /var/ossec/bin/wazuh-control info
+```
+You’ll see something like:
+`Wazuh v4.14.2`
+
+### ✅ Method 2 — From package manager
+```bash
+dpkg -l | grep wazuh
+```
+Example output:
+```text
+wazuh-manager   4.14.2-1
+wazuh-agent    4.14.2-1
+```
+
+## 🗑 Uninstall / Full Wipe
+To completely remove Wazuh from your system (packages, data, logs), use this clean uninstall method.
+
+### ⛔ Step 1: Stop Services
+```bash
+sudo systemctl stop wazuh-manager wazuh-indexer wazuh-dashboard filebeat
+```
+
+### 📦 Step 2: Purge Packages
+```bash
+sudo apt purge -y wazuh-manager wazuh-indexer wazuh-dashboard wazuh-agent filebeat
+```
+
+### 🧹 Step 3: Remove Data & Logs (Important)
+```bash
+sudo rm -rf /var/ossec
+sudo rm -rf /var/lib/wazuh*
+sudo rm -rf /etc/wazuh*
+sudo rm -rf /usr/share/wazuh*
+sudo rm -rf /var/log/wazuh*
+sudo rm -rf /var/lib/filebeat
+sudo rm -rf /etc/filebeat
+```
+
+### 🧼 Step 4: Clean Repos & Cache
+```bash
+sudo rm -f /etc/apt/sources.list.d/wazuh.list
+sudo apt autoremove -y
+sudo apt autoclean
+```
+
 ## ⚠️ Troubleshooting / Common Issues
 
 | Problem | Possible Fix |
@@ -150,7 +234,16 @@ Contributions are welcome! If you have ideas for improvements or bug fixes:
 4.  Push to the branch.
 5.  Open a Pull Request.
 
+## 💻 Developed by
+
+**Soumen Bhunia**
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/soumen-bhunia/)
+
+---
+
 ## 📜 License
+
 
 Distributed under the MIT License. See `LICENSE` for more information.
 

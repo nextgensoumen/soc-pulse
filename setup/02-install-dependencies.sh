@@ -26,4 +26,4 @@ if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
 fi
 echo -e "${GREEN}  [✓] Node.js ($(node -v)) & npm ($(npm -v)) ready!${NC}"
 
-echo -e "\n${GREEN}🎉 All installations complete! You can now run: ./03-run-dashboard.sh${NC}"
+echo -e "\n${GREEN}🎉 All installations complete! You can now run: ./setup/03-run-dashboard.sh${NC}"

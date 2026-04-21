@@ -17,7 +17,7 @@ done
 
 echo ""
 if [ "$ALL_GOOD" = true ]; then
-    echo -e "${GREEN}🎉 All prerequisites are met! You can skip directly to: ./03-run-dashboard.sh${NC}"
+    echo -e "${GREEN}🎉 All prerequisites are met! You can skip directly to: ./setup/03-run-dashboard.sh${NC}"
 else
-    echo -e "${RED}⚠️ Some prerequisites are missing! Please run: ./02-install-dependencies.sh${NC}"
+    echo -e "${RED}⚠️ Some prerequisites are missing! Please run: ./setup/02-install-dependencies.sh${NC}"
 fi

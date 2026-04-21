@@ -5,7 +5,12 @@ echo -e "${BLUE}${BOLD}==================================================${NC}"
 echo -e "${GREEN}${BOLD}    ⚙️ Starting SOC Pulse Backend Orchestrator ⚙️     ${NC}"
 echo -e "${BLUE}${BOLD}==================================================${NC}\n"
 
-cd backend || { echo "Error: backend directory not found."; exit 1; }
+echo -e "📦 Compiling local TypeScript Sub-Modules..."
+cd module-webapp-scanner || { echo "Error: WebApp scanner dir missing."; exit 1; }
+npm install --silent
+npm run build --silent
+
+cd ../backend || { echo "Error: backend directory not found."; exit 1; }
 
 echo -e "📦 Installing backend NPM packages..."
 npm install --silent

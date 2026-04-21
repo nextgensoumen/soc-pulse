@@ -228,8 +228,8 @@ async function run(): Promise<void> {
 		};
 
 		core.info('');
-		core.info('Shai-Hulud 2.0 Detector');
-		core.info('=======================');
+		core.info('SOC Pulse Supply Chain Scanner');
+		core.info('==============================');
 		core.info('');
 
 		// Display inputs

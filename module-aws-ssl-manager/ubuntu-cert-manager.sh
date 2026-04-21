@@ -5,6 +5,14 @@
 
 set -euo pipefail
 
+# Dynamic OS Detection
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS_VERSION="$NAME $VERSION_ID"
+else
+    OS_VERSION="Ubuntu"
+fi
+
 # Visuals for the UI matching
 BOLD='\033[1m'
 GREEN='\033[0;32m'
@@ -12,7 +20,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "    ${GREEN}AWS Ubuntu 24.04 IP SSL Status Engine${NC}    "
+echo -e "    ${GREEN}AWS ${OS_VERSION} IP SSL Status Engine${NC}    "
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
@@ -54,7 +62,7 @@ fi
 
 echo ""
 echo -e "${BOLD}Health Summary:${NC}"
-echo -e "  OS Signature: ${GREEN}Ubuntu (AWS Layer)${NC}"
+echo -e "  OS Signature: ${GREEN}${OS_VERSION} (AWS Layer)${NC}"
 echo -e "  ACME Compliance: Satisfactory"
 echo ""
 echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

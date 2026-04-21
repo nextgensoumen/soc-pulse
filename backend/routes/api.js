@@ -8,7 +8,7 @@ export const createApiRouter = (io) => {
     const MODULE_CONFIG = {
         1: { dir: 'module-supply-chain-defense', cmd: 'node', args: ['dist/index.js', '--working-directory=../dashboard'] },
         2: { dir: 'module-webapp-scanner', cmd: 'npx', args: ['react2shell-guard', '.', '--json'] },
-        3: { dir: 'module-server-hardening', cmd: 'bash', args: ['ubuntu-hardening-24-04.sh', '--audit-only'] }, // Run safely
+        3: { dir: 'module-aws-hardening', cmd: 'bash', args: ['ubuntu-aws-hardening.sh'] }, // AWS Cloud Safe Mode
         4: { dir: 'module-ir-cve-patcher', cmd: 'bash', args: ['ubuntu-remediate.sh'] },
         5: { dir: 'module-ssl-manager', cmd: 'bash', args: ['letsencrypt-ip-ssl-manager.sh', '--status'] }, // Status check
     };

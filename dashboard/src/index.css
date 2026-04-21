@@ -1,22 +1,22 @@
 :root {
-  --bg-color: #0b0e14;
-  --bg-color-rgb: 11, 14, 20;
+  --bg-color: #1a1508;
+  --bg-color-rgb: 26, 21, 8;
   
-  --panel-bg: rgba(20, 25, 35, 0.35); /* Increased Transparency for true glass effect */
-  --panel-border: rgba(255, 255, 255, 0.12);
+  --panel-bg: rgba(30, 25, 15, 0.45); /* Warm darkened glass */
+  --panel-border: rgba(255, 214, 0, 0.15); /* Subtle yellow border */
   
-  --primary: #00e5ff;
-  --primary-glow: rgba(0, 229, 255, 0.4);
+  --primary: #FFd600; /* Bright Sunflower Yellow */
+  --primary-glow: rgba(255, 214, 0, 0.45);
   
-  --secondary: #b388ff;
-  --secondary-glow: rgba(179, 136, 255, 0.4);
+  --secondary: #FF6D00; /* Warm Amber */
+  --secondary-glow: rgba(255, 109, 0, 0.45);
   
   --success: #00e676;
   --warning: #ffea00;
   --danger: #ff1744;
   
-  --text-main: #e0e6ed;
-  --text-muted: #8b9bb4;
+  --text-main: #fcf9dc;
+  --text-muted: #a39c7d;
 }
 
 * {
@@ -35,19 +35,54 @@ body {
   overflow: hidden; /* App will manage scrolling */
 }
 
-/* Background animated gradient */
-body::before {
-  content: "";
+/* Moving Sunflower Gradient Animation */
+@keyframes sunflowerFlow {
+  0% { transform: scale(1) translate(0%, 0%); }
+  33% { transform: scale(1.1) translate(3%, -3%); }
+  66% { transform: scale(0.95) translate(-2%, 2%); }
+  100% { transform: scale(1) translate(0%, 0%); }
+}
+
+/* Background Falling Sunflowers */
+@keyframes fallAndSpin {
+  0% { transform: translateY(-15vh) rotate(0deg); }
+  100% { transform: translateY(115vh) rotate(360deg); }
+}
+
+.particles-container {
   position: absolute;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: radial-gradient(circle at 10% 20%, var(--primary-glow) 0%, transparent 40%),
-              radial-gradient(circle at 90% 80%, var(--secondary-glow) 0%, transparent 40%);
+  overflow: hidden;
+  z-index: 0; 
+  pointer-events: none;
+}
+
+.sunflower-particle {
+  position: absolute;
+  top: -15vh;
+  animation: fallAndSpin linear infinite;
+  user-select: none;
+  text-shadow: 0 0 10px rgba(255, 214, 0, 0.4); /* Glow effect */
+}
+
+/* Background animated gradient */
+body::before {
+  content: "";
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 120vw;
+  height: 120vh;
+  background: radial-gradient(circle at 20% 30%, var(--primary-glow) 0%, transparent 45%),
+              radial-gradient(circle at 80% 70%, var(--secondary-glow) 0%, transparent 50%),
+              radial-gradient(circle at 50% 10%, rgba(255, 171, 0, 0.25) 0%, transparent 50%);
   z-index: -1;
-  opacity: 0.5;
-  filter: blur(60px);
+  opacity: 0.7;
+  filter: blur(70px);
+  animation: sunflowerFlow 15s ease-in-out infinite alternate;
 }
 
 /* Glassmorphism Utilities */

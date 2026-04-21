@@ -3,12 +3,44 @@ import { io } from 'socket.io-client';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import ModuleCard from './components/ModuleCard';
+import DocumentationView from './components/DocumentationView';
 
 // Dynamically connect to the backend running on the same host, port 5000
 const backendUrl = `http://${window.location.hostname}:5000`;
 const socket = io(backendUrl);
 
+const FallingSunflowers = () => {
+  const particles = Array.from({ length: 25 }).map((_, i) => {
+    const left = Math.random() * 100;
+    const animDuration = 15 + Math.random() * 25; // 15s to 40s
+    const delay = Math.random() * -40;
+    const size = 1.2 + Math.random() * 1.5; 
+    const blur = Math.random() * 3; 
+    const opacity = 0.15 + Math.random() * 0.4; 
+
+    return (
+      <div 
+        key={i} 
+        className="sunflower-particle"
+        style={{
+          left: `${left}vw`,
+          animationDuration: `${animDuration}s`,
+          animationDelay: `${delay}s`,
+          fontSize: `${size}rem`,
+          filter: `blur(${blur}px)`,
+          opacity: opacity
+        }}
+      >
+        🌻
+      </div>
+    );
+  });
+
+  return <div className="particles-container">{particles}</div>;
+};
+
 function App() {
+  const [activeView, setActiveView] = useState('dashboard');
   const [modules, setModules] = useState([
     {
       id: 1,
@@ -96,16 +128,19 @@ function App() {
 
   return (
     <div className="app-container">
-      <Sidebar />
+      <FallingSunflowers />
+      <Sidebar activeView={activeView} setActiveView={setActiveView} />
       <div className="main-content">
         <TopBar />
         <main className="content-area">
-          <div className="dashboard-header">
-            <h2>Command Center Overview</h2>
-            <p className="subtitle">Real-time status and live execution of all security modules.</p>
-          </div>
-          
-          <div className="modules-grid">
+          {activeView === 'dashboard' ? (
+            <>
+              <div className="dashboard-header">
+                <h2>Command Center Overview</h2>
+                <p className="subtitle">Real-time status and live execution of all security modules.</p>
+              </div>
+              
+              <div className="modules-grid">
             {modules.map(mod => (
               <ModuleCard 
                 key={mod.id}
@@ -120,10 +155,40 @@ function App() {
                 backendUrl={backendUrl}
               />
             ))}
-          </div>
+              </div>
+            </>
+          ) : (
+            <DocumentationView 
+              moduleId={parseInt(activeView.split('-')[1])} 
+              onBack={() => setActiveView('dashboard')} 
+            />
+          )}
 
-          <footer style={{ textAlign: 'center', padding: '40px 0 20px', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginTop: 'auto', letterSpacing: '1px' }}>
-            <p>© {new Date().getFullYear()} SOC Pulse. Developed and Designed by Ultron. All rights reserved.</p>
+          <footer style={{
+            textAlign: 'center',
+            padding: '25px 0',
+            marginTop: '50px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+            color: 'rgba(255, 255, 255, 0.5)',
+            fontSize: '0.85rem',
+            letterSpacing: '0.5px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '6px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255, 255, 255, 0.9)', marginBottom: '4px' }}>
+              <span style={{ fontSize: '1.2rem', textShadow: '0 0 10px rgba(255, 214, 0, 0.7)' }}>🌻</span>
+              <span style={{ fontWeight: '600', letterSpacing: '1.5px', color: '#FFd600' }}>SOC PULSE</span>
+            </div>
+            
+            <p style={{ margin: '0 0 6px 0', color: 'rgba(255, 255, 255, 0.4)' }}>
+              © {new Date().getFullYear()} All rights reserved.
+            </p>
+            
+            <p style={{ margin: 0, fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.6)' }}>
+              Developed & Designed by <strong style={{ color: '#FF6D00', letterSpacing: '1px', filter: 'drop-shadow(0 0 5px rgba(255, 109, 0, 0.6))' }}>ULTRON</strong>
+            </p>
           </footer>
         </main>
       </div>

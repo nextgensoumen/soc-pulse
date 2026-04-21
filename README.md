@@ -1,4 +1,7 @@
-# 🛡️ SOC Pulse: Automated Cloud Security Command Center
+<div align="center">
+  <img src="./dashboard/public/soc-pulse-logo.png" alt="SOC Pulse Logo" width="160" />
+  <h1>SOC Pulse: Automated Cloud Security Command Center</h1>
+</div>
 
 <div align="center">
   <img src="https://img.shields.io/badge/Status-Production--Ready-brightgreen" alt="Status" />

@@ -13,7 +13,7 @@ function App() {
     {
       id: 1,
       title: "Supply Chain Defense",
-      description: "Shai-Hulud NPM Malware Scanner. Monitors project dependencies for malicious payloads.",
+      description: "Analyzes project package.json and lockfiles against threat databases to detect malicious node dependencies.",
       icon: "🛡️",
       status: "Idle",
       threatLevel: "Low",
@@ -22,7 +22,7 @@ function App() {
     {
       id: 2,
       title: "Web App Scanner",
-      description: "React2Shell DAST vulnerability scanner for Remote Code Execution threats.",
+      description: "Executes the compiled local React2Shell binary to aggressively hunt CVE-2025-55182 Remote Code Execution payloads.",
       icon: "🌐",
       status: "Idle",
       threatLevel: "Medium",
@@ -30,8 +30,8 @@ function App() {
     },
     {
       id: 3,
-      title: "Endpoint Hardening",
-      description: "Ubuntu security script aligning infrastructure with DISA-STIG compliance.",
+      title: "System Endpoint Hardening",
+      description: "Injects kernel-level Sysctls, AuditD trackers, and Fail2Ban brute-force locks without severing Machine SSH keys.",
       icon: "🔐",
       status: "Idle",
       threatLevel: "Low",
@@ -39,8 +39,8 @@ function App() {
     },
     {
       id: 4,
-      title: "Incident Response",
-      description: "CVE-2024-3094 vulnerability checker and fleet-wide Ansible patcher.",
+      title: "Autonomous Remediation",
+      description: "Utilizes a headless DPkg sequence to detect and neutralize the infamous XZ-Utils (CVE-2024-3094) backend sshd backdoor.",
       icon: "🩹",
       status: "Idle",
       threatLevel: "High",
@@ -48,8 +48,8 @@ function App() {
     },
     {
       id: 5,
-      title: "Cryptographic Manager",
-      description: "Let's Encrypt IP SSL manager with automated 4-hour renewals.",
+      title: "Machine IP Cryptography",
+      description: "Generates explicit system-state audits targeting local Certbot ACME configurations for 6-day IP-Certificate rotations.",
       icon: "🔑",
       status: "Idle",
       threatLevel: "Low",
@@ -121,6 +121,10 @@ function App() {
               />
             ))}
           </div>
+
+          <footer style={{ textAlign: 'center', padding: '40px 0 20px', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginTop: 'auto', letterSpacing: '1px' }}>
+            <p>© {new Date().getFullYear()} SOC Pulse. Developed and Designed by Ultron. All rights reserved.</p>
+          </footer>
         </main>
       </div>
     </div>

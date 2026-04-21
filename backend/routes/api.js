@@ -7,7 +7,7 @@ export const createApiRouter = (io) => {
     // Hardcoded mapping of dashboard module IDs to their respective bash/npm execution commands
     const MODULE_CONFIG = {
         1: { dir: 'module-supply-chain-defense', cmd: 'node', args: ['dist/index.js', '--working-directory=../dashboard'] },
-        2: { dir: 'module-webapp-scanner', cmd: 'npx', args: ['react2shell-guard', '.', '--json'] },
+        2: { dir: 'module-webapp-scanner', cmd: 'node', args: ['dist/cli/index.js', '../dashboard', '--json'] },
         3: { dir: 'module-aws-hardening', cmd: 'bash', args: ['ubuntu-aws-hardening.sh'] }, // AWS Cloud Safe Mode
         4: { dir: 'module-ir-cve-patcher', cmd: 'bash', args: ['ubuntu-remediate.sh'] },
         5: { dir: 'module-ssl-manager', cmd: 'bash', args: ['letsencrypt-ip-ssl-manager.sh', '--status'] }, // Status check

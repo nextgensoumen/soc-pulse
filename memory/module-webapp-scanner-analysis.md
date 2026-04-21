@@ -1,23 +1,21 @@
-# deep-analysis: module-webapp-scanner
+# deep-analysis: module-webapp-scanner 
 
 ## Overview
-The `module-webapp-scanner` is internally known as **react2shell-guard**. It is a specialized, proactive defensive security orchestrator built entirely to combat a massive new zero-day known as **CVE-2025-55182 (React2Shell)**.
+This module acts as the core Web Application vulnerability scanner endpoint for the SOC Pulse Orchestrator. It specifically targets **CVE-2025-55182** (the highly critical CVSS 10.0 React2Shell vulnerability that exploits React Server Components).
 
-*Context:* Discovered recently in late 2025, CVE-2025-55182 is a CVSS 10.0 (maximum severity) unauthenticated Remote Code Execution (RCE) vulnerability. It exploits how React Server Components (RSC) and frameworks like Next.js decode server payloads sent to React Server Functions via the "Flight" protocol.
+## Vulnerability Specifics
+The flaw fundamentally involves manipulating the payload decryption phase of `react-server-dom-webpack` and specific versions of `next` (Next.js v15 to v16). Unauthenticated hackers send malicious server-action flight protocols that execute direct root-level payloads on the host processing the mutation. Because SOC Pulse features a React Dashboard frontend, hardening the user interface boundary layer is vital.
 
-## Core Mechanisms
-This TypeScript/Node.js module is an all-in-one Swiss Army Knife for defending against React2Shell:
+## The Architectural Refactor
+Originally the node orchestration backend (`api.js`) simply triggered an external CLI payload via `npx react2shell-guard`. This fundamentally poses a supply chain risk, as downloading executable scanner packages over `npm` on demand dynamically connects to uncontrollable remote registries.
 
-1. **Passive Live URL Fingerprinting:** 
-   It has the ability to scan deployed, live applications via URLs. To do this safely, it sends a benign but malformed `multipart/form-data` RSC payload to the server. If the server throws a specific HTTP 500 error matching the React Server Component digest stack trace, the scanner knows the server is unpatched, all without actually exploiting the server.
-2. **Local Repository & Container Scanning:**
-   It parses offline lockfiles (`package-lock.json`, `yarn.lock`) to determine if your exact `next` or `react-server-dom` versions fall within the highly specific vulnerable windows (like `15.2.0-15.2.5`). It can also locally mount and scan Docker Image layers for these same packages.
-3. **Runtime Protection Middleware:**
-   Most interestingly, this module isn't just a scanner. It contains actual Express.js and Next.js *protection middleware*. You can inject this scanner in front of your web servers, and it actively monitors incoming web requests to drop malicious Server Action tampering or prototype pollution payloads before they ever hit React.
-4. **Auto-Remediation:**
-   It features an automated patching system (`react2shell-guard fix`) that safely force-updates NPM dependencies to the patched Next.js sub-versions (e.g., bumping `15.0.x` safely to `15.0.5`).
+*   **Compilation Flow:** We forced the application to securely compile its TypeScript structure locally (`npm run build`). This generated `dist/cli/index.js`, dropping the need to pull `npx` down remotely.
+*   **Documentation Adjustments:** We totally overwrote the massive original repository `README.md` and explicitly refactored it to explain why this exists specifically inside the isolated SOC Pulse universe.
 
-## Integration with SOC Pulse
-In our unified dashboard, this is represented by the **Web App Scanner** card. 
-- It is currently flashing with a status of **Scanning** and a **Medium Threat Level**.
-- The main button says **"Stop Scan"**, demonstrating that right now, it is likely constantly polling or iterating over your internal AWS URL fleets doing passive fingerprint checks.
+## How it Integrates with SOC Pulse
+It maps directly to **Module 2** (Web App Security) inside the `backend/routes/api.js` Express router.
+When the user clicks "Run Module" via the React Dashboard, the node server intercepts the event and dynamically triggers the fully compiled localized payload:
+```bash
+node dist/cli/index.js ../dashboard --json
+```
+The exact output payload parsing your React Dashboard for these unpatched vectors is streamed beautifully back to the UI logger window.

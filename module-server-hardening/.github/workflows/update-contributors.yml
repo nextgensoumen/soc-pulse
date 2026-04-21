@@ -1,0 +1,168 @@
+name: Update Contributors
+
+on:
+  # Run on schedule - weekly on Sunday at midnight
+  schedule:
+    - cron: '0 0 * * 0'
+
+  # Run when issues or PRs are opened/closed
+  issues:
+    types: [opened, closed]
+  pull_request:
+    types: [opened, closed, merged]
+
+  # Run on discussion events
+  discussion:
+    types: [created]
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  update-contributors:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get all contributors
+        id: contributors
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get code contributors
+          CODE_CONTRIBUTORS=$(gh api repos/${{ github.repository }}/contributors --jq '.[].login' | sort -u)
+
+          # Get issue authors
+          ISSUE_AUTHORS=$(gh issue list --state all --json author --jq '.[].author.login' | sort -u)
+
+          # Get PR authors
+          PR_AUTHORS=$(gh pr list --state all --json author --jq '.[].author.login' | sort -u)
+
+          # Get comment authors
+          COMMENT_AUTHORS=$(gh api repos/${{ github.repository }}/issues/comments --jq '.[].user.login' 2>/dev/null | sort -u || echo "")
+
+          # Combine and deduplicate all contributors
+          ALL_CONTRIBUTORS=$(echo -e "$CODE_CONTRIBUTORS\n$ISSUE_AUTHORS\n$PR_AUTHORS\n$COMMENT_AUTHORS" | sort -u | grep -v '^$')
+
+          echo "contributors<<EOF" >> $GITHUB_OUTPUT
+          echo "$ALL_CONTRIBUTORS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Generate contributors table
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CONTRIBUTORS: ${{ steps.contributors.outputs.contributors }}
+        run: |
+          # Create the contributors table
+          cat > /tmp/contributors_table.md << 'HEADER'
+          <!-- ALL-CONTRIBUTORS-START -->
+          <!-- This section is automatically updated by GitHub Actions -->
+
+          <table>
+            <tr>
+          HEADER
+
+          count=0
+          while IFS= read -r username; do
+            if [ -z "$username" ]; then continue; fi
+
+            # Get user info
+            AVATAR=$(gh api users/$username --jq '.avatar_url' 2>/dev/null || echo "https://github.com/identicons/$username.png")
+
+            # Determine contribution types
+            CONTRIB_TYPES=""
+
+            # Check if code contributor
+            if gh api repos/${{ github.repository }}/contributors --jq '.[].login' | grep -q "^${username}$"; then
+              CONTRIB_TYPES="${CONTRIB_TYPES}💻 "
+            fi
+
+            # Check if opened issues
+            if gh issue list --state all --author "$username" --json number --jq 'length' | grep -qv '^0$'; then
+              CONTRIB_TYPES="${CONTRIB_TYPES}🐛 "
+            fi
+
+            # Check if opened PRs
+            if gh pr list --state all --author "$username" --json number --jq 'length' | grep -qv '^0$'; then
+              CONTRIB_TYPES="${CONTRIB_TYPES}📖 "
+            fi
+
+            # Default if no specific type
+            if [ -z "$CONTRIB_TYPES" ]; then
+              CONTRIB_TYPES="💬"
+            fi
+
+            # Add to table (4 per row)
+            if [ $((count % 4)) -eq 0 ] && [ $count -ne 0 ]; then
+              echo "    </tr>" >> /tmp/contributors_table.md
+              echo "    <tr>" >> /tmp/contributors_table.md
+            fi
+
+            cat >> /tmp/contributors_table.md << CELL
+              <td align="center">
+                <a href="https://github.com/$username">
+                  <img src="$AVATAR" width="80px;" alt="$username"/><br />
+                  <sub><b>$username</b></sub>
+                </a><br />
+                <sub>$CONTRIB_TYPES</sub>
+              </td>
+          CELL
+
+            count=$((count + 1))
+          done <<< "$CONTRIBUTORS"
+
+          cat >> /tmp/contributors_table.md << 'FOOTER'
+            </tr>
+          </table>
+
+          **Legend:** 💻 Code | 🐛 Bug Reports | 📖 Documentation | 🚧 Maintenance | 💬 Discussions | 👀 Reviews
+
+          <!-- ALL-CONTRIBUTORS-END -->
+          FOOTER
+
+          cat /tmp/contributors_table.md
+
+      - name: Update README
+        run: |
+          # Read the current README
+          README_CONTENT=$(cat README.md)
+
+          # Extract content before and after the contributors section
+          BEFORE=$(echo "$README_CONTENT" | sed -n '1,/<!-- ALL-CONTRIBUTORS-START -->/p' | sed '$ d')
+          AFTER=$(echo "$README_CONTENT" | sed -n '/<!-- ALL-CONTRIBUTORS-END -->/,$ p' | sed '1 d')
+
+          # Combine with new contributors table
+          {
+            echo "$BEFORE"
+            cat /tmp/contributors_table.md
+            echo "$AFTER"
+          } > README.md
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet README.md; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add README.md
+          git commit -m "Update contributors list [skip ci]"
+          git push

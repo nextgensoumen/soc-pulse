@@ -1,0 +1,123 @@
+name: "False Positive Report"
+description: "Report a package that has been incorrectly flagged as compromised"
+title: "[False Positive] "
+labels: ["false-positive", "needs-verification"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Report a False Positive
+
+        If you believe a package has been incorrectly flagged as compromised, please provide evidence below.
+
+        **Note:** Removing packages requires strong evidence that they are NOT compromised.
+
+  - type: input
+    id: package_name
+    attributes:
+      label: Package Name
+      description: The package you believe is incorrectly flagged
+      placeholder: "@scope/package-name or package-name"
+    validations:
+      required: true
+
+  - type: input
+    id: npm_link
+    attributes:
+      label: npm Link
+      description: Link to the package on npmjs.com
+      placeholder: "https://www.npmjs.com/package/@scope/package-name"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: evidence_type
+    attributes:
+      label: Evidence Type
+      description: What evidence do you have that this is a false positive? (Select all that apply)
+      options:
+        - label: "Official statement from package maintainers"
+        - label: "Code audit showing no malicious code"
+        - label: "Package was published before the attack (pre Nov 24, 2025)"
+        - label: "npm security team confirmation"
+        - label: "GitHub security team confirmation"
+        - label: "I am the package maintainer"
+        - label: "Other (describe below)"
+
+  - type: textarea
+    id: evidence_details
+    attributes:
+      label: Evidence Details
+      description: |
+        Provide detailed evidence that this package is NOT compromised:
+        - Links to official statements
+        - Code analysis results
+        - Publish timestamps
+        - Security team communications
+      placeholder: |
+        Example:
+
+        This package was published on November 1, 2025, before the attack.
+
+        Evidence:
+        - npm publish date: 2025-11-01T10:00:00Z
+        - No postinstall scripts
+        - Source code verified: https://github.com/...
+
+        Maintainer statement: https://twitter.com/...
+    validations:
+      required: true
+
+  - type: input
+    id: publish_date
+    attributes:
+      label: Package Publish Date
+      description: When was the flagged version published? (ISO format preferred)
+      placeholder: "2025-11-01 or 2025-11-01T10:00:00Z"
+
+  - type: textarea
+    id: maintainer_info
+    attributes:
+      label: Maintainer Information
+      description: |
+        If you are the package maintainer or have contact with them:
+        - Your relationship to the package
+        - Official communication channels
+        - Any remediation steps taken
+
+  - type: dropdown
+    id: urgency
+    attributes:
+      label: Urgency
+      description: How urgent is this correction?
+      options:
+        - "Critical - Package is widely used and detection is causing issues"
+        - "High - Important package, needs attention soon"
+        - "Medium - Should be corrected but not urgent"
+        - "Low - Minor correction"
+    validations:
+      required: true
+
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: |
+        Describe the impact of this false positive:
+        - How many users/projects are affected?
+        - What problems is it causing?
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmation
+      description: Please confirm the following
+      options:
+        - label: "I have provided evidence that this package is NOT compromised"
+          required: true
+        - label: "I understand this report will be thoroughly verified before any changes"
+          required: true
+        - label: "I am willing to provide additional evidence if requested"
+          required: true

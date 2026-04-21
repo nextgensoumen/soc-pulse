@@ -1,0 +1,152 @@
+name: "Batch Package Submission"
+description: "Submit multiple compromised packages at once (for security researchers)"
+title: "[Batch Submission] "
+labels: ["batch-submission", "needs-verification", "priority:high"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Batch Package Submission
+
+        Use this template to submit multiple compromised packages at once.
+
+        **Best for:** Security researchers who have identified multiple packages through analysis.
+
+        **Note:** Batch submissions undergo the same verification as individual reports.
+
+  - type: input
+    id: researcher
+    attributes:
+      label: Researcher/Organization
+      description: Your name, handle, or organization
+      placeholder: "@github_username or Organization Name"
+    validations:
+      required: true
+
+  - type: input
+    id: package_count
+    attributes:
+      label: Number of Packages
+      description: How many packages are you submitting?
+      placeholder: "10"
+    validations:
+      required: true
+
+  - type: textarea
+    id: package_list
+    attributes:
+      label: Package List
+      description: |
+        List all packages, one per line, in the format:
+        `package-name,severity,evidence-url`
+
+        Or paste a JSON array:
+        ```json
+        [{"name": "@scope/pkg", "severity": "critical"}]
+        ```
+      placeholder: |
+        @scope/package1,critical,https://evidence-link-1
+        @scope/package2,critical,https://evidence-link-2
+        package3,high,https://evidence-link-3
+
+        OR JSON format:
+
+        [
+          {"name": "@scope/package1", "severity": "critical"},
+          {"name": "@scope/package2", "severity": "critical"},
+          {"name": "package3", "severity": "high"}
+        ]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: discovery_method
+    attributes:
+      label: Discovery Method
+      description: How did you identify these packages?
+      options:
+        - "Manual code analysis"
+        - "Automated scanning tool"
+        - "npm registry analysis"
+        - "GitHub repository analysis"
+        - "Network traffic analysis"
+        - "Honeypot/sandbox analysis"
+        - "Multiple methods"
+        - "Other (describe below)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: methodology
+    attributes:
+      label: Methodology
+      description: |
+        Describe your discovery methodology:
+        - Tools used
+        - Analysis process
+        - Verification steps
+      placeholder: |
+        Example:
+
+        1. Scanned npm registry for packages with suspicious postinstall scripts
+        2. Downloaded and analyzed package contents
+        3. Identified setup_bun.js in multiple packages
+        4. Verified file hashes against known IOCs
+        5. Cross-referenced with attack timeline
+
+        Tools used:
+        - Custom npm scanner
+        - YARA rules for IOC detection
+        - Network sandbox for behavioral analysis
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence_summary
+    attributes:
+      label: Evidence Summary
+      description: |
+        Provide a summary of evidence for the batch:
+        - Common indicators found
+        - Sample analysis
+        - Links to detailed reports
+      placeholder: |
+        All packages contain:
+        - setup_bun.js (SHA-1: d1829b4708126dcc7bea7437c04d1f10eacd4a16)
+        - bun_environment.js (SHA-1: d60ec97eea19fffb4809bc35b91033b52490ca11)
+
+        Detailed analysis: https://link-to-report
+
+        Sample package analysis:
+        - @scope/package1: [link to analysis]
+    validations:
+      required: true
+
+  - type: input
+    id: report_link
+    attributes:
+      label: Full Report Link
+      description: Link to your detailed analysis or blog post (optional but recommended)
+      placeholder: "https://your-blog.com/shai-hulud-analysis"
+
+  - type: checkboxes
+    id: verification
+    attributes:
+      label: Verification
+      description: Please confirm
+      options:
+        - label: "I have verified each package individually"
+          required: true
+        - label: "I have checked for duplicates against the existing database"
+          required: true
+        - label: "I can provide additional evidence if requested"
+          required: true
+        - label: "I consent to being credited for this submission"
+
+  - type: textarea
+    id: additional_notes
+    attributes:
+      label: Additional Notes
+      description: Any other relevant information

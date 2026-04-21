@@ -1,0 +1,26 @@
+[
+  {
+    "type": "shai-hulud-repo",
+    "titleContains": "Shai-Hulud reference",
+    "locationContains": ".github/workflows",
+    "comment": "Self-reference: This repository IS the Shai-Hulud detector, so references to itself in workflows are expected"
+  },
+  {
+    "type": "shai-hulud-repo",
+    "titleContains": "Shai-Hulud reference",
+    "locationContains": "action.yml",
+    "comment": "Self-reference: Action metadata file references the action name"
+  },
+  {
+    "type": "shai-hulud-repo",
+    "titleContains": "Shai-Hulud reference",
+    "locationContains": "README.md",
+    "comment": "Self-reference: Documentation references the project name"
+  },
+  {
+    "type": "shai-hulud-repo",
+    "titleContains": "Shai-Hulud reference",
+    "locationContains": "package.json",
+    "comment": "Self-reference: Package metadata contains project name"
+  }
+]

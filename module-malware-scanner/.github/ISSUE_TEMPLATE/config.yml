@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/gensecaihq/Shai-Hulud-2.0-Detector/blob/main/docs/PACKAGE_DATABASE.md
+    about: Read the package database contribution guide before submitting
+  - name: Search Existing Issues
+    url: https://github.com/gensecaihq/Shai-Hulud-2.0-Detector/issues?q=is%3Aissue
+    about: Search existing issues to avoid duplicates
+  - name: Discussions
+    url: https://github.com/gensecaihq/Shai-Hulud-2.0-Detector/discussions
+    about: Ask questions or discuss in our community forum
+  - name: Security Vulnerabilities
+    url: https://github.com/gensecaihq/Shai-Hulud-2.0-Detector/blob/main/SECURITY.md
+    about: Report security vulnerabilities in the detector tool itself (not packages)

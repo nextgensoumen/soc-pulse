@@ -1,0 +1,46 @@
+{
+	"name": "shai-hulud-detector",
+	"version": "2.1.0",
+	"description": "GitHub Action to detect Shai-Hulud 2.0 supply chain attack with SHA256 hash matching, on:discussion trigger detection, and runner installation scanning",
+	"main": "dist/index.js",
+	"scripts": {
+		"build": "ncc build src/index.ts -o dist --source-map --license licenses.txt",
+		"test": "jest",
+		"lint": "eslint src/**/*.ts",
+		"format": "prettier --write src/**/*.ts"
+	},
+	"keywords": [
+		"github-action",
+		"security",
+		"npm",
+		"supply-chain",
+		"shai-hulud",
+		"vulnerability",
+		"scanner"
+	],
+	"author": "gensecaihq (https://github.com/gensecaihq)",
+	"license": "MIT",
+	"dependencies": {
+		"@actions/core": "^1.10.1",
+		"@actions/github": "^6.0.0",
+		"@actions/glob": "^0.4.0",
+		"json5": "^2.2.3",
+		"semver": "^7.7.3",
+		"yargs": "^17.7.2"
+	},
+	"devDependencies": {
+		"@types/node": "^20.10.0",
+		"@types/semver": "^7.7.1",
+		"@types/yargs": "^17.0.35",
+		"@vercel/ncc": "^0.38.1",
+		"typescript": "^5.3.2"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/gensecaihq/Shai-Hulud-2.0-Detector.git"
+	},
+	"bugs": {
+		"url": "https://github.com/gensecaihq/Shai-Hulud-2.0-Detector/issues"
+	},
+	"homepage": "https://github.com/gensecaihq/Shai-Hulud-2.0-Detector#readme"
+}

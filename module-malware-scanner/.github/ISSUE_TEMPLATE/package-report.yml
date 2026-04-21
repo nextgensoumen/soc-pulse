@@ -1,0 +1,142 @@
+name: "Package Report"
+description: "Report a new compromised package for the Shai-Hulud 2.0 database"
+title: "[Package Report] "
+labels: ["package-report", "needs-verification"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Report a Compromised Package
+
+        Thank you for helping protect the open-source community! Please provide as much detail as possible.
+
+        **Before submitting:**
+        - Search existing issues to avoid duplicates
+        - Check if the package is already in `compromised-packages.json`
+
+  - type: input
+    id: package_name
+    attributes:
+      label: Package Name
+      description: Full npm package name (include scope if applicable)
+      placeholder: "@scope/package-name or package-name"
+    validations:
+      required: true
+
+  - type: input
+    id: npm_link
+    attributes:
+      label: npm Link
+      description: Link to the package on npmjs.com
+      placeholder: "https://www.npmjs.com/package/@scope/package-name"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      description: How severe is the compromise?
+      options:
+        - "critical - Confirmed malicious code execution"
+        - "high - Strong evidence of compromise"
+        - "medium - Suspected or partial compromise"
+        - "low - Potentially affected"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: evidence_type
+    attributes:
+      label: Evidence Type
+      description: What evidence do you have? (Select all that apply)
+      options:
+        - label: "Contains setup_bun.js"
+        - label: "Contains bun_environment.js"
+        - label: "Suspicious postinstall/preinstall script"
+        - label: "File hash matches known malicious hash"
+        - label: "Published during attack window (Nov 24, 2025)"
+        - label: "Maintainer account was compromised"
+        - label: "Official security advisory exists"
+        - label: "Network activity observed"
+        - label: "Other (describe below)"
+
+  - type: textarea
+    id: evidence_details
+    attributes:
+      label: Evidence Details
+      description: |
+        Provide detailed evidence of the compromise. Include:
+        - File paths and contents
+        - Hash values
+        - Screenshots
+        - Links to analysis
+        - Network logs
+      placeholder: |
+        Example:
+
+        Found `setup_bun.js` in package root:
+        - Path: node_modules/@scope/package/setup_bun.js
+        - SHA-1: d1829b4708126dcc7bea7437c04d1f10eacd4a16
+
+        Postinstall script executes this file:
+        ```json
+        "scripts": {
+          "postinstall": "node setup_bun.js"
+        }
+        ```
+    validations:
+      required: true
+
+  - type: input
+    id: affected_versions
+    attributes:
+      label: Affected Versions
+      description: Which versions are affected? Use "all" if unknown or all versions.
+      placeholder: "all, or >=1.0.0 <1.0.5"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: source
+    attributes:
+      label: Source
+      description: How did you discover this?
+      options:
+        - "Personal discovery/analysis"
+        - "Security advisory (npm, GitHub, etc.)"
+        - "Security researcher report"
+        - "Aikido Security"
+        - "Wiz.io"
+        - "HelixGuard"
+        - "Other (specify below)"
+    validations:
+      required: true
+
+  - type: input
+    id: source_link
+    attributes:
+      label: Source Link
+      description: Link to the original source or analysis
+      placeholder: "https://..."
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional Context
+      description: Any other information that might be helpful
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmation
+      description: Please confirm the following
+      options:
+        - label: "I have verified this package is not already in the database"
+          required: true
+        - label: "I have provided evidence supporting this report"
+          required: true
+        - label: "I understand this report will be reviewed before being added"
+          required: true

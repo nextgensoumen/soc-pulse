@@ -1,0 +1,114 @@
+name: Update IOC Database
+
+on:
+  schedule:
+    # Run daily at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    # Allow manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-database:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get current package count
+        id: before
+        run: |
+          count=$(cat compromised-packages.json | jq '.packages | length')
+          echo "count=$count" >> $GITHUB_OUTPUT
+          echo "Current package count: $count"
+
+      - name: Update IOC Database
+        id: update
+        run: |
+          node scripts/update-ioc-database.js
+
+          # Check if there are changes
+          if git diff --quiet compromised-packages.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No changes detected"
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Changes detected"
+          fi
+
+      - name: Get new package count
+        id: after
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          count=$(cat compromised-packages.json | jq '.packages | length')
+          echo "count=$count" >> $GITHUB_OUTPUT
+          echo "New package count: $count"
+
+          # Calculate diff
+          before=${{ steps.before.outputs.count }}
+          diff=$((count - before))
+          echo "diff=$diff" >> $GITHUB_OUTPUT
+
+      - name: Rebuild dist
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          npm ci
+          npm run build
+
+      - name: Create Pull Request
+        if: steps.update.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: |
+            chore(ioc): Update compromised packages database
+
+            Automated update from Datadog consolidated IOCs.
+
+            Sources: Datadog, HelixGuard, Koi, ReversingLabs, Socket.dev, StepSecurity, Wiz
+
+            Package count: ${{ steps.before.outputs.count }} → ${{ steps.after.outputs.count }} (${{ steps.after.outputs.diff >= 0 && '+' || '' }}${{ steps.after.outputs.diff }})
+          branch: automated/update-ioc-database
+          delete-branch: true
+          title: "chore(ioc): Update compromised packages database"
+          body: |
+            ## Automated IOC Database Update
+
+            This PR updates the compromised packages database from the [Datadog consolidated IOCs](https://github.com/DataDog/indicators-of-compromise/tree/main/shai-hulud-2.0).
+
+            ### Sources Aggregated
+            - Datadog Security Labs
+            - HelixGuard
+            - Koi Security
+            - ReversingLabs
+            - Socket.dev
+            - StepSecurity
+            - Wiz
+
+            ### Changes
+            | Metric | Before | After |
+            |--------|--------|-------|
+            | Package count | ${{ steps.before.outputs.count }} | ${{ steps.after.outputs.count }} |
+            | Difference | - | ${{ steps.after.outputs.diff >= 0 && '+' || '' }}${{ steps.after.outputs.diff }} |
+
+            ### Review Checklist
+            - [ ] Package count change is reasonable
+            - [ ] No unexpected packages added/removed
+            - [ ] Build completed successfully
+
+            ---
+            *This PR was automatically created by the IOC Database Update workflow.*
+          labels: |
+            automated
+            ioc-update
+            dependencies

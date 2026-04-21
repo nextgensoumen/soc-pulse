@@ -2,6 +2,8 @@ import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import { logger } from './logger.js';
+import { recordScan } from './scanHistory.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,102 +16,153 @@ const activeProcesses = new Map();
 
 /**
  * Executes a module script in a child process and streams logs via Socket.io
- * @param {string} moduleId - Unique ID for this module (e.g., 'malware-scanner')
- * @param {string} relativeDir - Directory relative to PROJECT_ROOT (e.g., 'module-malware-scanner')
- * @param {string} command - Command to execute (e.g., 'npm')
- * @param {Array<string>} args - Arguments (e.g., ['run', 'scan'])
- * @param {Object} io - Socket.io instance
+ * Logs are captured in memory for scan history and broadcast live via WebSocket.
+ *
+ * @param {string} moduleId     - Numeric ID for this module (e.g., '1')
+ * @param {string} moduleName   - Human-readable name (e.g., 'Supply Chain Defense')
+ * @param {string} relativeDir  - Directory relative to PROJECT_ROOT
+ * @param {string} command      - Command to execute (e.g., 'bash' or 'node')
+ * @param {Array}  args         - Arguments array
+ * @param {Object} io           - Socket.io server instance
  */
-export const runModule = (moduleId, relativeDir, command, args, io) => {
+export const runModule = (moduleId, moduleName, relativeDir, command, args, io) => {
     if (activeProcesses.has(moduleId)) {
         throw new Error(`Module ${moduleId} is already running.`);
     }
 
     const workingDirectory = path.join(PROJECT_ROOT, relativeDir);
 
-    // Verify directory exists
+    // Verify directory exists before attempting spawn
     if (!fs.existsSync(workingDirectory)) {
         throw new Error(`Directory not found: ${workingDirectory}`);
     }
 
+    const startTime = new Date().toISOString();
+    const startMs = Date.now();
+    const logBuffer = []; // Capture logs for history
+
+    logger.start(`Module ${moduleId} (${moduleName}) — launching in ${relativeDir}`);
+
     // Spawn the child process
     const child = spawn(command, args, {
         cwd: workingDirectory,
-        shell: true, // Use shell to support complex commands and scripts
+        shell: true,
     });
 
-    activeProcesses.set(moduleId, { child, startTime: Date.now() });
+    activeProcesses.set(moduleId, { child, startTime: startMs, moduleName });
 
-    // Broadcast standard output to the designated room
+    // ── STDOUT ────────────────────────────────────────────────────────────────
     child.stdout.on('data', (data) => {
         const text = data.toString();
+        logBuffer.push(text);
         io.to(`module_${moduleId}`).emit('log_stream', {
             moduleId,
             type: 'stdout',
             message: text,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
         });
     });
 
-    // Broadcast standard error
+    // ── STDERR ────────────────────────────────────────────────────────────────
     child.stderr.on('data', (data) => {
         const text = data.toString();
+        logBuffer.push(text);
         io.to(`module_${moduleId}`).emit('log_stream', {
             moduleId,
             type: 'stderr',
             message: text,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
         });
     });
 
-    // Handle process completion
+    // ── PROCESS COMPLETED ─────────────────────────────────────────────────────
     child.on('close', (code) => {
         activeProcesses.delete(moduleId);
-        
-        const statusMsg = `Process exited with code ${code}`;
+        const endTime = new Date().toISOString();
+        const durationMs = Date.now() - startMs;
+        const status = code === 0 ? 'Completed' : 'Failed';
+
+        const exitMsg = `\n[SYSTEM] Process exited with code ${code}\n`;
+        logBuffer.push(exitMsg);
+
         io.to(`module_${moduleId}`).emit('log_stream', {
             moduleId,
             type: 'system',
-            message: `\n[SYSTEM] ${statusMsg}\n`,
-            timestamp: new Date().toISOString()
+            message: exitMsg,
+            timestamp: endTime,
         });
 
         io.to(`module_${moduleId}`).emit('module_status_change', {
             moduleId,
-            status: code === 0 ? 'Completed' : 'Failed',
-            isRunning: false
+            status,
+            isRunning: false,
         });
+
+        // Persist scan result to history
+        recordScan({
+            moduleId,
+            moduleName,
+            startTime,
+            endTime,
+            durationMs,
+            exitCode: code,
+            status,
+            logSnippet: logBuffer,
+        });
+
+        if (code === 0) {
+            logger.done(`Module ${moduleId} (${moduleName}) completed in ${(durationMs / 1000).toFixed(1)}s`);
+        } else {
+            logger.error(`Module ${moduleId} (${moduleName}) FAILED — exit code ${code} — ${(durationMs / 1000).toFixed(1)}s`);
+        }
     });
 
-    // Handle process crash/error
+    // ── PROCESS CRASH ─────────────────────────────────────────────────────────
     child.on('error', (err) => {
         activeProcesses.delete(moduleId);
+        const endTime = new Date().toISOString();
+        const durationMs = Date.now() - startMs;
+        const errorMsg = `[SYSTEM ERROR] Failed to start subprocess: ${err.message}`;
+
+        logger.error(`Module ${moduleId} (${moduleName}) spawn error — ${err.message}`);
+
         io.to(`module_${moduleId}`).emit('log_stream', {
             moduleId,
             type: 'error',
-            message: `[SYSTEM ERROR] Failed to start subprocess: ${err.message}`,
-            timestamp: new Date().toISOString()
+            message: errorMsg,
+            timestamp: endTime,
         });
-        
+
         io.to(`module_${moduleId}`).emit('module_status_change', {
             moduleId,
             status: 'Error',
-            isRunning: false
+            isRunning: false,
+        });
+
+        recordScan({
+            moduleId,
+            moduleName,
+            startTime,
+            endTime,
+            durationMs,
+            exitCode: -1,
+            status: 'Error',
+            logSnippet: [errorMsg],
         });
     });
 
-    // Broadcast that it has started
+    // ── STARTED ───────────────────────────────────────────────────────────────
     io.to(`module_${moduleId}`).emit('module_status_change', {
         moduleId,
         status: 'Scanning',
-        isRunning: true
+        isRunning: true,
     });
 
     return { success: true, message: `Module ${moduleId} started.` };
 };
 
 /**
- * Attempts to forcefully stop a running module
+ * Forcefully stop a running module via SIGTERM
  */
 export const stopModule = (moduleId, io) => {
     const processData = activeProcesses.get(moduleId);
@@ -117,26 +170,33 @@ export const stopModule = (moduleId, io) => {
         throw new Error(`Module ${moduleId} is not currently running.`);
     }
 
-    // Force kill the child process
     processData.child.kill('SIGTERM');
     activeProcesses.delete(moduleId);
+
+    logger.warn(`Module ${moduleId} (${processData.moduleName}) — manually terminated by administrator`);
 
     io.to(`module_${moduleId}`).emit('log_stream', {
         moduleId,
         type: 'system',
         message: '\n[SYSTEM] Administrator manually terminated the process.\n',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
     });
 
     io.to(`module_${moduleId}`).emit('module_status_change', {
         moduleId,
         status: 'Stopped',
-        isRunning: false
+        isRunning: false,
     });
 
     return { success: true, message: `Module ${moduleId} terminated.` };
 };
 
-export const getStatus = (moduleId) => {
-    return activeProcesses.has(moduleId);
-};
+/**
+ * Check if a module is currently running
+ */
+export const getStatus = (moduleId) => activeProcesses.has(moduleId);
+
+/**
+ * Get count of currently active processes
+ */
+export const getActiveCount = () => activeProcesses.size;

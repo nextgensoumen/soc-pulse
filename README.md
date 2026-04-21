@@ -6,9 +6,19 @@
   <img src="https://img.shields.io/badge/Architecture-React%20%2B%20Node.js-blue" alt="Architecture" />
 </div>
 
+<div align="center">
+  <a href="./WORKFLOW.md">
+    <img src="https://img.shields.io/badge/📊%20System%20Workflow-View%20Full%20Architecture%20Diagram-FFd600?style=for-the-badge&labelColor=1a1a1a" alt="System Workflow" />
+  </a>
+</div>
+
 Welcome to **SOC Pulse**, a fully robust, automated, and centralized Security Operations Center (SOC) framework expressly engineered for Amazon Web Services (AWS) Ubuntu EC2 infrastructure. 
 
 SOC Pulse consolidates five independent, previously disconnected security disciplines—ranging from Node.js supply-chain monitoring to deep-OS kernel hardening—into a single, highly intuitive Command Center interface. It drastically lowers the barrier to entry for securing cloud assets by giving system administrators a single pane of glass from which to trigger and monitor critical vulnerability assessments natively.
+
+> 📊 **[View the Full System Workflow & Architecture Diagrams →](./WORKFLOW.md)**
+> 
+> *Includes: End-to-end data flow, module execution lifecycle, OS operation maps, directory structure, and threat coverage mindmap.*
 
 ---
 

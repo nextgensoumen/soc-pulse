@@ -9,7 +9,7 @@ export const createApiRouter = (io) => {
         1: { dir: 'module-malware-scanner', cmd: 'npm', args: ['test'] }, // Placeholder safely
         2: { dir: 'module-webapp-scanner', cmd: 'npx', args: ['react2shell-guard', '.', '--json'] },
         3: { dir: 'module-server-hardening', cmd: 'bash', args: ['ubuntu-hardening-24-04.sh', '--audit-only'] }, // Run safely
-        4: { dir: 'custom-auto-remediation', cmd: 'bash', args: ['ubuntu-remediate.sh'] },
+        4: { dir: 'module-ir-cve-patcher', cmd: 'bash', args: ['ubuntu-remediate.sh'] },
         5: { dir: 'module-ssl-manager', cmd: 'bash', args: ['letsencrypt-ip-ssl-manager.sh', '--status'] }, // Status check
     };
 

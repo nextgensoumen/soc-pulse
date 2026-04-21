@@ -10,7 +10,7 @@ echo -e "${GREEN}${BOLD}   🛡️  Welcome to SOC Pulse Command Center 🛡️ 
 echo -e "${BLUE}${BOLD}==================================================${NC}\n"
 
 # Ensure other scripts have execution permissions
-chmod +x setup/01-check-prerequisites.sh setup/02-install-dependencies.sh setup/03-run-dashboard.sh
+chmod +x setup/01-check-prerequisites.sh setup/02-install-dependencies.sh setup/03-run-dashboard.sh setup/04-run-backend.sh
 
 echo -e "${YELLOW}[Master Script] >>> Launching setup/01-check-prerequisites.sh${NC}"
 ./setup/01-check-prerequisites.sh
@@ -19,6 +19,13 @@ echo -e "\n${BLUE}--------------------------------------------------${NC}"
 echo -e "${YELLOW}[Master Script] >>> Launching setup/02-install-dependencies.sh${NC}"
 # We run this to ensure the system is completely updated and any missing pieces from step 01 are forcefully grabbed
 ./setup/02-install-dependencies.sh
+
+echo -e "\n${BLUE}--------------------------------------------------${NC}"
+echo -e "${YELLOW}[Master Script] >>> Launching setup/04-run-backend.sh (in background)${NC}"
+./setup/04-run-backend.sh &
+
+# Wait simply for backend to initialize
+sleep 3
 
 echo -e "\n${BLUE}--------------------------------------------------${NC}"
 echo -e "${YELLOW}[Master Script] >>> Launching setup/03-run-dashboard.sh${NC}"

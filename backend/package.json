@@ -1,0 +1,16 @@
+{
+  "name": "soc-pulse-backend",
+  "version": "1.0.0",
+  "description": "Node.js orchestrator for SOC Pulse modules",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  }
+}

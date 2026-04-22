@@ -2,6 +2,53 @@
 
 ---
 
+## Session 3.8 — Module 3 Log Analysis: 3 Critical Crash Bugs Fixed
+
+### 🧪 Real AWS Run (Ubuntu 22.04 / ubuntu-hardening-original.sh v2.0)
+Run crashed at ClamAV config with: `ubuntu-aws-hardening.sh: line 237: PIPESTATUS[1]: unbound variable`
+
+### 🐛 Bug 1 — PIPESTATUS[1] Unbound Variable (orchestrator crash)
+```bash
+# Root cause: 'set -u' (nounset) + accessing array index [1] when array may have 1 element
+local exit_code
+exit_code=${PIPESTATUS[1]}  # ← CRASH if PIPESTATUS has only 1 element
+
+# Fix: capture full array first, use default with parameter expansion
+local _ps=( "${PIPESTATUS[@]}" )
+local exit_code="${_ps[1]-1}"  # nounset-safe, default 1 if unset
+```
+
+### 🐛 Bug 2 — validate_frequency() Stdout Pollution (broken cron path)
+```bash
+# Root cause: print_message writes to STDOUT, polluting $(validate_frequency "y")
+# Result: scan_frequency = "[ANSI_COLOR]... Invalid frequency. Using weekly... weekly"
+# Then: cat > "/etc/cron.[ANSI]...weekly/clamav_scan" → No such file or directory
+
+# Fix: redirect warning to STDERR in validate_frequency
+print_message "$YELLOW" "Invalid frequency..." >&2  # ← stderr, not stdout
+echo "weekly"
+```
+
+### 🐛 Bug 3 — ClamAV `read -r scan_frequency` consuming wrong pipe token
+```bash
+# Root cause: orchestrator piped "y\nweekly\nweekly\nY" but 'y' was consumed by
+# ClamAV's read (not version mismatch check which was skipped for 22.04).
+# 'y' → validate_frequency("y") → invalid → stdout-polluted variable
+
+# Fix 1: orchestrator now pipes only "y\nY" (removed frequency tokens)
+# Fix 2: all 3 scripts now use SOC_PULSE_HEADLESS guard for ClamAV/OpenSCAP reads:
+if [[ "${SOC_PULSE_HEADLESS:-false}" == "true" ]]; then
+    scan_frequency="${CLAMAV_SCAN_FREQUENCY:-weekly}"  # use exported env var
+fi
+```
+
+### 📁 Files Modified (4 files, 3 scripts)
+- `ubuntu-aws-hardening.sh` — PIPESTATUS fix + removed frequency from pipe
+- `ubuntu-hardening-original.sh` — validate_frequency stderr + headless ClamAV/OpenSCAP + version check
+- `ubuntu-hardening-25.sh` — same fixes as original.sh
+
+---
+
 ## Session 3.7 — Log Analysis: Module 4 CVE False-Positive Bug Fix
 
 ### 🧪 Real AWS Run Results (Ubuntu 22.04 / Kernel 6.8.0-1046-aws)

@@ -2,6 +2,53 @@
 
 ---
 
+## Session 3.9 — Module 3 Run 2: 4 Additional Bugs Fixed
+
+### 🧪 Real AWS Run 2 (Ubuntu 22.04) — Near-Success, Exit Code 0 But 4 Issues
+
+| # | Bug | Location | Severity |
+|---|-----|----------|---------|
+| 1 | `BLUE: unbound variable` at line 922 | `configure_cloud_security()` | 🔴 Crash |
+| 2 | UFW actually enabled on AWS EC2 | `configure_ufw()` | 🔴 Dangerous |
+| 3 | AIDE `Overwrite aide.db.new [Yn]?` prompt | `configure_aide()` | 🟡 Interactive |
+| 4 | AIDE `Overwrite aide.db [yN]?` prompt | `configure_aide()` | 🟡 Interactive |
+
+### 🐛 Bug 1 — $BLUE Unbound Variable
+```bash
+# ubuntu-hardening-original.sh only defined RED, GREEN, YELLOW, NC
+# configure_cloud_security() at line 922 used $BLUE → crash with set -u
+# Fix: added missing colors
+readonly BLUE='\033[0;34m'
+readonly CYAN='\033[0;36m'
+readonly BOLD='\033[1m'
+```
+
+### 🐛 Bug 2 — UFW Enabled Despite AWS Safety Mode
+```bash
+# Root cause: 'echo "y" | ufw enable' has NO headless guard
+# ufw reads from /dev/tty not stdin — so ALWAYS prompts and enables
+# Fix: wrap ufw enable in SOC_PULSE_HEADLESS check
+if [[ "${SOC_PULSE_HEADLESS:-false}" == "true" ]]; then
+    echo "[AWS-SAFE] UFW rules staged but NOT enabled"
+else
+    echo "y" | ufw enable
+fi
+```
+
+### 🐛 Bug 3+4 — AIDE Interactive Prompts
+```bash
+# aideinit prompts: 'Overwrite aide.db.new [Yn]?' and 'Overwrite aide.db [yN]?'
+# Fix: rm -f before init + cp -f instead of mv (no prompt)
+rm -f /var/lib/aide/aide.db.new   # prevent first prompt
+aideinit
+cp -f /var/lib/aide/aide.db.new /var/lib/aide/aide.db  # no prompt
+```
+
+### 📋 Hardening Status After Run 2 (Ubuntu 22.04)
+All 9 core controls applied: Kernel Sysctls ✅ | AuditD ✅ | Fail2Ban ✅ | AppArmor ✅ | ClamAV weekly ✅ | AIDE ✅ | rkhunter+chkrootkit ✅ | Unattended-Upgrades ✅ | debsums ✅ | UFW SKIPPED ✅ | SSH RELOADED ✅
+
+---
+
 ## Session 3.8 — Module 3 Log Analysis: 3 Critical Crash Bugs Fixed
 
 ### 🧪 Real AWS Run (Ubuntu 22.04 / ubuntu-hardening-original.sh v2.0)

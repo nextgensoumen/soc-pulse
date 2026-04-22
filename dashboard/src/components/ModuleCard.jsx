@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { openReport } from '../utils/reportGenerator';
 
 const ModuleCard = ({ id, title, description, icon, status, threatLevel, isRunning, socket, backendUrl }) => {
   const [logs, setLogs] = useState([]);
@@ -123,6 +124,15 @@ const ModuleCard = ({ id, title, description, icon, status, threatLevel, isRunni
         >
           {showLogs ? "Hide Logs" : "Show Logs"}
         </button>
+        {logs.length > 0 && !isRunning && (
+          <button
+            className="btn-report"
+            onClick={() => openReport(id, logs)}
+            title="Generate PDF security report from these logs"
+          >
+            📊 Report
+          </button>
+        )}
       </div>
     </div>
   );

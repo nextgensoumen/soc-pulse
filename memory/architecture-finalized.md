@@ -1,5 +1,54 @@
 # Final Project Architecture Validation
 
+---
+
+## Session 3 — PDF Report Generator + UI Layout Fixes
+
+### 📊 PDF Report Generator (NEW FEATURE)
+- **File:** `dashboard/src/utils/reportGenerator.js`
+- Parses raw module log arrays → extracts metrics automatically:
+  - Packages installed (counts `Setting up ...` lines)
+  - Checks passed (counts `[✓]` lines)
+  - Warnings, Errors, Duration, Total log lines
+  - OS name/version/codename from log headers
+  - AWS Safety Mode detection
+- Generates a **self-contained beautiful HTML report page** (no server library needed):
+  - SOC Pulse branded header with module color theme
+  - 6 metric cards (packages, checks, warnings, errors, duration, log lines)
+  - AWS Safety Mode banner (when active)
+  - Color-coded log sections: OS Detection, Package Install, Security Config, Firewall, Audit, Warnings, Summary
+  - **"⬇ Download as PDF"** button → triggers browser `window.print()` → save as PDF
+- **Integration in `ModuleCard.jsx`:**
+  - Purple `📊 Report` button appears automatically after any module run completes
+  - Calls `openReport(moduleId, logs)` → opens report in new browser tab as a blob URL
+  - Button hidden while module is running or if no logs yet
+
+### 🔧 UI Layout Fixes (All Pushed)
+- **TopBar always visible:** Moved outside scrollable `content-area` as `flex-shrink: 0`
+- **Grid overflow fix:** `minmax(min(360px, 100%), 1fr)` — cards never overflow viewport
+- **Module card:** Added `min-width: 0` to prevent flex blowout
+- **Scroll behavior:** `scroll-behavior: smooth` + `overflow-x: hidden` on content-area
+- **`card-footer`:** Added `flex-wrap: wrap` so 3 buttons (Run/Logs/Report) always fit
+
+### ⚡ Performance Fix — Headless Server Package Bloat
+- **Removed from `ubuntu-hardening-24-04.sh`:**
+  - `gufw` — GUI firewall frontend that pulled in **115 packages + 106MB** (mesa/WebKit/GTK) on headless AWS
+  - `apparmor-notify` — desktop pop-up daemon pulling in **60+ X11/GTK packages**
+- **Impact:** Next run will be ~10-15 minutes faster, ~500MB less disk usage
+- **Security:** Zero impact — UFW itself stays, AppArmor itself stays
+
+### 🔴 Live Test Results (Ubuntu 24.04 EC2)
+- OS correctly detected as **Ubuntu 24.04 LTS (noble)** — not 22.04
+- Script v3.0 selected and executed correctly
+- AWS EC2 Safety Mode activated (UFW not enabled, SSH not restarted)
+- All 35+ security packages installed successfully
+- `auditd`, `aide`, `tripwire`, `clamav`, `fail2ban`, `snort`, `rkhunter` all configured
+
+### 📋 Next Steps
+- Enhance System Endpoint Hardening report with full colorful template
+- Add module-specific report templates for other 4 modules
+- User to re-run Module 3 after gufw fix and confirm faster execution time
+
 ## Overview
 As of the final audit, the **SOC Pulse** project is 100% complete. The initial goal of combining 5 loosely configured security repositories into one natively automated Node+React orchestrator has been achieved.
 

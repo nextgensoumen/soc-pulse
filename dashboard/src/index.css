@@ -442,8 +442,9 @@ body::before {
 
 .card-footer {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   margin-top: 10px;
+  flex-wrap: wrap;
 }
 
 button {
@@ -576,4 +577,40 @@ button {
   border-color: rgba(239,68,68,0.3);
   color: #fca5a5;
   gap: 6px;
+}
+
+/* ── Report Button ──────────────────────────────────────────────────────────── */
+.btn-report {
+  background: linear-gradient(135deg, rgba(139,92,246,0.2), rgba(59,130,246,0.2));
+  color: #a78bfa;
+  border: 1px solid rgba(139,92,246,0.4);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.btn-report:hover {
+  background: linear-gradient(135deg, rgba(139,92,246,0.35), rgba(59,130,246,0.35));
+  border-color: rgba(139,92,246,0.7);
+  box-shadow: 0 0 12px rgba(139,92,246,0.35);
+  transform: translateY(-1px);
+}
+
+/* ── Danger Button ───────────────────────────────────────────────────────────── */
+.btn-danger {
+  flex: 1;
+  background: rgba(239,68,68,0.15);
+  color: #f87171;
+  border: 1px solid rgba(239,68,68,0.4);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.btn-danger:hover {
+  background: rgba(239,68,68,0.25);
+  box-shadow: 0 0 10px rgba(239,68,68,0.3);
 }

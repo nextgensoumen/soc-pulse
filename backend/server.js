@@ -38,6 +38,77 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// ── SYSTEM INFO ───────────────────────────────────────────────────────────────
+// GET /api/system/info — Reads real OS info from the Ubuntu host
+import { execSync } from 'child_process';
+import os from 'os';
+
+app.get('/api/system/info', (req, res) => {
+    try {
+        // Read /etc/os-release for distro info (works on all Ubuntu versions)
+        let osName = 'Ubuntu';
+        let osVersion = 'Unknown';
+        let osCodename = '';
+        let osId = 'ubuntu';
+
+        try {
+            const osRelease = execSync('cat /etc/os-release 2>/dev/null', { encoding: 'utf8', timeout: 3000 });
+            const lines = osRelease.split('\n');
+            const parse = (key) => {
+                const line = lines.find(l => l.startsWith(key + '='));
+                return line ? line.split('=')[1].replace(/"/g, '').trim() : '';
+            };
+            osName     = parse('NAME')           || 'Ubuntu';
+            osVersion  = parse('VERSION_ID')     || 'Unknown';
+            osCodename = parse('VERSION_CODENAME') || parse('UBUNTU_CODENAME') || '';
+            osId       = parse('ID')             || 'ubuntu';
+        } catch (_) {
+            // Fallback if not on Linux (e.g., Windows dev machine)
+            osName    = process.platform === 'win32' ? 'Windows' : 'Linux';
+            osVersion = 'N/A';
+        }
+
+        // Kernel version
+        let kernel = 'N/A';
+        try {
+            kernel = execSync('uname -r 2>/dev/null', { encoding: 'utf8', timeout: 2000 }).trim();
+        } catch (_) {
+            kernel = os.release();
+        }
+
+        // Hostname
+        const hostname = os.hostname();
+
+        // Uptime
+        const uptimeSec = os.uptime();
+        const uptimeHuman = formatUptime(uptimeSec);
+
+        // CPU arch
+        const arch = os.arch();
+
+        res.json({
+            success: true,
+            os: {
+                name: osName,
+                version: osVersion,
+                codename: osCodename,
+                id: osId,
+                displayLabel: osCodename
+                    ? `${osName} ${osVersion} (${osCodename})`
+                    : `${osName} ${osVersion}`,
+            },
+            kernel,
+            hostname,
+            arch,
+            uptime: uptimeHuman,
+            timestamp: new Date().toISOString(),
+        });
+    } catch (err) {
+        logger.error(`/api/system/info failed: ${err.message}`);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 // ── MODULE ROUTES ─────────────────────────────────────────────────────────────
 app.use('/api/modules', createApiRouter(io));
 

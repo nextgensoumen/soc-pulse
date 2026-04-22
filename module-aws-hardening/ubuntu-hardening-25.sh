@@ -92,10 +92,14 @@ check_ubuntu_version() {
     if [[ ! "$version" =~ ^25\.(04|10)$ ]]; then
         print_message "$YELLOW" "WARNING: This script is optimized for Ubuntu 25.04/25.10"
         print_message "$YELLOW" "Current version: $version"
-        read -p "Do you want to continue? (y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            error_exit "User cancelled operation"
+        if [[ "${SOC_PULSE_HEADLESS:-false}" == "true" ]]; then
+            print_message "$YELLOW" "[AWS-SAFE] Headless mode — auto-continuing past version check."
+        else
+            read -p "Do you want to continue? (y/N): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                error_exit "User cancelled operation"
+            fi
         fi
     fi
 
@@ -153,7 +157,9 @@ validate_frequency() {
             echo "$frequency"
             ;;
         *)
-            print_message "$YELLOW" "Invalid frequency. Using 'weekly' as default."
+            # ⚠ Write warning to STDERR — if written to stdout it pollutes
+            # $scan_frequency when called as: scan_frequency=$(validate_frequency ...)
+            print_message "$YELLOW" "Invalid frequency. Using 'weekly' as default." >&2
             echo "weekly"
             ;;
     esac
@@ -828,9 +834,16 @@ EOF
     systemctl enable clamav-daemon
 
     # Get scan frequency
-    print_message "$GREEN" "Please enter how often you want ClamAV scans to run (daily/weekly/monthly):"
-    read -r scan_frequency
-    scan_frequency=$(validate_frequency "$scan_frequency")
+    # Get scan frequency — use headless env var or interactive prompt
+    if [[ "${SOC_PULSE_HEADLESS:-false}" == "true" ]]; then
+        scan_frequency="${CLAMAV_SCAN_FREQUENCY:-weekly}"
+        scan_frequency=$(validate_frequency "$scan_frequency")
+        print_message "$GREEN" "[AWS-SAFE] Using ClamAV scan frequency: $scan_frequency (headless mode)"
+    else
+        print_message "$GREEN" "Please enter how often you want ClamAV scans to run (daily/weekly/monthly):"
+        read -r scan_frequency
+        scan_frequency=$(validate_frequency "$scan_frequency")
+    fi
 
     # Create systemd timer for scans
     cat > /etc/systemd/system/clamav-scan.service << 'EOF'
@@ -1613,9 +1626,16 @@ configure_openscap() {
     print_message "$GREEN" "Configuring OpenSCAP for Ubuntu 25.x..."
 
     # Get scan frequency
-    print_message "$GREEN" "Please enter how often you want OpenSCAP scans to run (daily/weekly/monthly):"
-    read -r oscap_frequency
-    oscap_frequency=$(validate_frequency "$oscap_frequency")
+    # Get scan frequency — use headless env var or interactive prompt
+    if [[ "${SOC_PULSE_HEADLESS:-false}" == "true" ]]; then
+        oscap_frequency="${SCAP_SCAN_FREQUENCY:-weekly}"
+        oscap_frequency=$(validate_frequency "$oscap_frequency")
+        print_message "$GREEN" "[AWS-SAFE] Using OpenSCAP scan frequency: $oscap_frequency (headless mode)"
+    else
+        print_message "$GREEN" "Please enter how often you want OpenSCAP scans to run (daily/weekly/monthly):"
+        read -r oscap_frequency
+        oscap_frequency=$(validate_frequency "$oscap_frequency")
+    fi
 
     # Find the appropriate SCAP content
     local ssg_file="/usr/share/xml/scap/ssg/content/ssg-ubuntu2404-ds.xml"

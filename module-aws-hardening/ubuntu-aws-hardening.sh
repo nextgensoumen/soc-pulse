@@ -220,22 +220,22 @@ run_hardening_script() {
     local start_time
     start_time=$(date +%s)
 
-    # Fallback stdin pipe — most prompts now handled via SOC_PULSE_HEADLESS=true.
-    # Still piped as a safety net for any un-migrated prompts:
-    #   "y"             -- version mismatch confirmation
-    #   $SCAN_FREQUENCY -- ClamAV / OpenSCAP frequency
-    #   "Y"             -- SSH key safety prompt fallback
+    # Fallback stdin pipe — only for prompts NOT handled by SOC_PULSE_HEADLESS:
+    #   Line 1: "y" — version mismatch confirmation (check_ubuntu_version)
+    #   Line 2: "Y" — SSH key safety prompt fallback (harden_ssh)
+    # ClamAV/OpenSCAP frequency now handled via CLAMAV_SCAN_FREQUENCY / SOC_PULSE_HEADLESS.
     #
-    # BUG FIX: Disable pipefail around this call so a non-zero exit from
-    # the sub-script (optional package not available, etc.) doesn't abort
-    # this orchestrator. We read the real exit code via PIPESTATUS[1].
+    # BUG FIX 1: Disable pipefail around this call so non-zero exit from
+    # sub-script (optional packages etc.) doesn't abort the orchestrator.
+    # BUG FIX 2: PIPESTATUS[1] with 'set -u' throws "unbound variable" if the
+    # array has fewer elements than expected. Capture to local array first,
+    # then use a default value '1' via parameter expansion.
     set +o pipefail
-    echo -e "y\n${SCAN_FREQUENCY}\n${SCAN_FREQUENCY}\nY" | bash "$SELECTED_SCRIPT" 2>&1 | tee -a "$ORCHESTRATOR_LOG"
-    # CRITICAL bash gotcha: 'local var=$(...)' always returns 0 — declare first, then assign.
-    # PIPESTATUS[0]=echo  PIPESTATUS[1]=bash sub-script  PIPESTATUS[2]=tee
-    local exit_code
-    exit_code=${PIPESTATUS[1]}
+    echo -e "y\nY" | bash "$SELECTED_SCRIPT" 2>&1 | tee -a "$ORCHESTRATOR_LOG" || true
+    local _ps
+    _ps=("${PIPESTATUS[@]}")
     set -o pipefail
+    local exit_code="${_ps[1]-1}"  # default 1 if index 1 unset (nounset-safe)
 
     local end_time
     end_time=$(date +%s)

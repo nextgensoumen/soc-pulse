@@ -1,0 +1,73 @@
+[
+  {
+    "id": "scan_1776835850096",
+    "moduleId": "1",
+    "moduleName": "Supply Chain Defense",
+    "startTime": "2026-04-22T05:30:49.859Z",
+    "endTime": "2026-04-22T05:30:50.095Z",
+    "durationMs": 236,
+    "durationHuman": "0.2s",
+    "exitCode": 0,
+    "status": "Completed",
+    "logSnippet": [
+      "\r\n",
+      "SOC Pulse Supply Chain Scanner\r\n==============================\r\n\r\nInputs:\r\n- Fail on Critical: true\r\n- Fail on High: false\r\n- Fail on Any: false\r\n- Scan Lockfiles: true\r\n- Scan Node Modules: false\r\n- Output Format: json\r\n- Working Directory: ../dashboard\r\n- Allowlist Path: .shai-hulud-allowlist.json\r\n- Ignore Allowlist: false\r\n- Warn on Allowlist: false\r\n",
+      "\r\nDatabase version: 2.0.0\r\nLast updated: 2025-12-12T00:54:57.949Z\r\nTotal known affected packages: 795\r\n\r\nScanning directory: D:\\project\\soc-pulse\\dashboard\r\n",
+      "Starting scan...\r\n",
+      "\r\nJSON Report:\r\n{\n  \"totalDependencies\": 202,\n  \"affectedCount\": 0,\n  \"cleanCount\": 202,\n  \"results\": [],\n  \"securityFindings\": [],\n  \"scannedFilesCount\": 2,\n  \"scannedFiles\": [\n    \"D:/project/soc-pulse/dashboard/package.json\",\n    \"D:/project/soc-pulse/dashboard/package-lock.json\"\n  ],\n  \"scanTime\": 26\n}\r\n",
+      "\r\n::set-output name=affected-count::0\r\n\r\n::set-output name=security-findings-count::0\r\n\r\n::set-output name=scan-time::26\r\n\r\n::set-output name=status::clean\r\n\r\n::set-output name=results::[]\r\n\r\n::set-output name=security-findings::[]\r\n\r\n::set-output name=allowlisted-count::0\r\nScan complete. No compromised packages or security issues detected.\r\n",
+      "\n[SYSTEM] Process exited with code 0\n"
+    ]
+  },
+  {
+    "id": "scan_1776835503172",
+    "moduleId": "3",
+    "moduleName": "System Endpoint Hardening",
+    "startTime": "2026-04-22T05:25:02.897Z",
+    "endTime": "2026-04-22T05:25:03.170Z",
+    "durationMs": 273,
+    "durationHuman": "0.3s",
+    "exitCode": 1,
+    "status": "Failed",
+    "logSnippet": [
+      "W\u0000i\u0000n\u0000d\u0000o\u0000w\u0000s\u0000 \u0000S\u0000u\u0000b\u0000s\u0000y\u0000s\u0000t\u0000e\u0000m\u0000 \u0000f\u0000o\u0000r\u0000 \u0000L\u0000i\u0000n\u0000u\u0000x\u0000 \u0000h\u0000a\u0000s\u0000 \u0000n\u0000o\u0000 \u0000i\u0000n\u0000s\u0000t\u0000a\u0000l\u0000l\u0000e\u0000d\u0000 \u0000d\u0000i\u0000s\u0000t\u0000r\u0000i\u0000b\u0000u\u0000t\u0000i\u0000o\u0000n\u0000s\u0000.\u0000\r\u0000\n\u0000Y\u0000o\u0000u\u0000 \u0000c\u0000a\u0000n\u0000 \u0000r\u0000e\u0000s\u0000o\u0000l\u0000v\u0000e\u0000 \u0000t\u0000h\u0000i\u0000s\u0000 \u0000b\u0000y\u0000 \u0000i\u0000n\u0000s\u0000t\u0000a\u0000l\u0000l\u0000i\u0000n\u0000g\u0000 \u0000a\u0000 \u0000d\u0000i\u0000s\u0000t\u0000r\u0000i\u0000b\u0000u\u0000t\u0000i\u0000o\u0000n\u0000 \u0000w\u0000i\u0000t\u0000h\u0000 \u0000t\u0000h\u0000e\u0000 \u0000i\u0000n\u0000s\u0000t\u0000r\u0000u\u0000c\u0000t\u0000i\u0000o\u0000n\u0000s\u0000 \u0000b\u0000e\u0000l\u0000o\u0000w\u0000:\u0000\r\u0000\n\u0000\r\u0000\n\u0000U\u0000s\u0000e\u0000 \u0000'\u0000w\u0000s\u0000l\u0000.\u0000e\u0000x\u0000e\u0000 \u0000-\u0000-\u0000l\u0000i\u0000s\u0000t\u0000 \u0000-\u0000-\u0000o\u0000n\u0000l\u0000i\u0000n\u0000e\u0000'\u0000 \u0000t\u0000o\u0000 \u0000l\u0000i\u0000s\u0000t\u0000 \u0000a\u0000v\u0000a\u0000i\u0000l\u0000a\u0000b\u0000l\u0000e\u0000 \u0000d\u0000i\u0000s\u0000t\u0000r\u0000i\u0000b\u0000u\u0000t\u0000i\u0000o\u0000n\u0000s\u0000\r\u0000\n\u0000a\u0000n\u0000d\u0000 \u0000'\u0000w\u0000s\u0000l\u0000.\u0000e\u0000x\u0000e\u0000 \u0000-\u0000-\u0000i\u0000n\u0000s\u0000t\u0000a\u0000l\u0000l\u0000 \u0000<\u0000D\u0000i\u0000s\u0000t\u0000r\u0000o\u0000>\u0000'\u0000 \u0000t\u0000o\u0000 \u0000i\u0000n\u0000s\u0000t\u0000a\u0000l\u0000l\u0000.\u0000\r\u0000\n\u0000",
+      "\n[SYSTEM] Process exited with code 1\n"
+    ]
+  },
+  {
+    "id": "scan_1776834932537",
+    "moduleId": "2",
+    "moduleName": "Web App Scanner",
+    "startTime": "2026-04-22T05:15:32.335Z",
+    "endTime": "2026-04-22T05:15:32.535Z",
+    "durationMs": 200,
+    "durationHuman": "0.2s",
+    "exitCode": 1,
+    "status": "Failed",
+    "logSnippet": [
+      "node:internal/modules/cjs/loader:1404\r\n  throw err;\r\n  ^\r\n\r\nError: Cannot find module 'D:\\project\\soc-pulse\\module-webapp-scanner\\dist\\cli\\index.js'\r\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1401:15)\r\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1057:19)\r\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1062:22)\r\n    at Function._load (node:internal/modules/cjs/loader:1211:37)\r\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\r\n    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)\r\n    at Function.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:171:5)\r\n    at node:internal/main/run_main_module:36:49 {\r\n  code: 'MODULE_NOT_FOUND',\r\n  requireStack: []\r\n}\r\n",
+      "\r\nNode.js v22.16.0\r\n",
+      "\n[SYSTEM] Process exited with code 1\n"
+    ]
+  },
+  {
+    "id": "scan_1776834913976",
+    "moduleId": "1",
+    "moduleName": "Supply Chain Defense",
+    "startTime": "2026-04-22T05:15:13.672Z",
+    "endTime": "2026-04-22T05:15:13.975Z",
+    "durationMs": 303,
+    "durationHuman": "0.3s",
+    "exitCode": 0,
+    "status": "Completed",
+    "logSnippet": [
+      "\r\nSOC Pulse Supply Chain Scanner\r\n==============================\r\n\r\n",
+      "Inputs:\r\n- Fail on Critical: true\r\n- Fail on High: false\r\n- Fail on Any: false\r\n- Scan Lockfiles: true\r\n- Scan Node Modules: false\r\n- Output Format: json\r\n- Working Directory: ../dashboard\r\n- Allowlist Path: .shai-hulud-allowlist.json\r\n- Ignore Allowlist: false\r\n- Warn on Allowlist: false\r\n\r\n",
+      "Database version: 2.0.0\r\nLast updated: 2025-12-12T00:54:57.949Z\r\nTotal known affected packages: 795\r\n\r\nScanning directory: D:\\project\\soc-pulse\\dashboard\r\n",
+      "Starting scan...\r\n",
+      "\r\nJSON Report:\r\n{\n  \"totalDependencies\": 202,\n  \"affectedCount\": 0,\n  \"cleanCount\": 202,\n  \"results\": [],\n  \"securityFindings\": [],\n  \"scannedFilesCount\": 2,\n  \"scannedFiles\": [\n    \"D:/project/soc-pulse/dashboard/package.json\",\n    \"D:/project/soc-pulse/dashboard/package-lock.json\"\n  ],\n  \"scanTime\": 31\n}\r\n\r\n",
+      "::set-output name=affected-count::0\r\n\r\n::set-output name=security-findings-count::0\r\n\r\n::set-output name=scan-time::31\r\n\r\n::set-output name=status::clean\r\n\r\n::set-output name=results::[]\r\n\r\n::set-output name=security-findings::[]\r\n\r\n::set-output name=allowlisted-count::0\r\nScan complete. No compromised packages or security issues detected.\r\n",
+      "\n[SYSTEM] Process exited with code 0\n"
+    ]
+  }
+]

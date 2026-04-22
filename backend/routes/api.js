@@ -80,18 +80,14 @@ export const createApiRouter = (io) => {
         }
 
         try {
-            const result = runModule(id, module.name, module.dir, module.cmd, module.args, io);
-
-            // Set cooldown when process finishes — listen for status_change
-            const cooldownHandler = (data) => {
-                if (String(data.moduleId) === String(id) && !data.isRunning) {
-                    cooldownTracker.set(id, Date.now());
-                    io.off('module_status_change', cooldownHandler);
-                }
+            // Pass onComplete callback so cooldown is set the instant the process
+            // finishes — avoids the socket-room event never reaching the server listener.
+            const onComplete = () => {
+                cooldownTracker.set(id, Date.now());
+                logger.info(`Module ${id} (${module.name}) cooldown started (${module.cooldownSeconds || 60}s)`);
             };
-            // We hook into the socket room completion signal
-            io.on('module_status_change', cooldownHandler);
 
+            const result = runModule(id, module.name, module.dir, module.cmd, module.args, io, onComplete);
             res.json(result);
         } catch (error) {
             logger.error(`Failed to start Module ${id}: ${error.message}`);

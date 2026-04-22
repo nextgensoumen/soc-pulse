@@ -25,7 +25,7 @@ const activeProcesses = new Map();
  * @param {Array}  args         - Arguments array
  * @param {Object} io           - Socket.io server instance
  */
-export const runModule = (moduleId, moduleName, relativeDir, command, args, io) => {
+export const runModule = (moduleId, moduleName, relativeDir, command, args, io, onComplete = null) => {
     if (activeProcesses.has(moduleId)) {
         throw new Error(`Module ${moduleId} is already running.`);
     }
@@ -43,10 +43,17 @@ export const runModule = (moduleId, moduleName, relativeDir, command, args, io) 
 
     logger.start(`Module ${moduleId} (${moduleName}) — launching in ${relativeDir}`);
 
-    // Spawn the child process
+    // Spawn the child process.
+    // Always pass SOC_PULSE_HEADLESS + DEBIAN_FRONTEND so scripts run non-interactively
+    // regardless of which module or user invokes them.
     const child = spawn(command, args, {
         cwd: workingDirectory,
         shell: true,
+        env: {
+            ...process.env,
+            SOC_PULSE_HEADLESS: 'true',
+            DEBIAN_FRONTEND: 'noninteractive',
+        },
     });
 
     activeProcesses.set(moduleId, { child, startTime: startMs, moduleName });
@@ -85,6 +92,7 @@ export const runModule = (moduleId, moduleName, relativeDir, command, args, io) 
         const exitMsg = `\n[SYSTEM] Process exited with code ${code}\n`;
         logBuffer.push(exitMsg);
 
+        // Emit to the watching room (frontend)
         io.to(`module_${moduleId}`).emit('log_stream', {
             moduleId,
             type: 'system',
@@ -92,11 +100,13 @@ export const runModule = (moduleId, moduleName, relativeDir, command, args, io) 
             timestamp: endTime,
         });
 
-        io.to(`module_${moduleId}`).emit('module_status_change', {
-            moduleId,
-            status,
-            isRunning: false,
-        });
+        // Emit BOTH to room and server-level so any server listeners also fire
+        const statusPayload = { moduleId, status, isRunning: false };
+        io.to(`module_${moduleId}`).emit('module_status_change', statusPayload);
+        io.emit('module_status_change', statusPayload);  // ← server-level broadcast
+
+        // Invoke onComplete callback (sets cooldown in api.js without relying on socket events)
+        if (typeof onComplete === 'function') onComplete();
 
         // Persist scan result to history
         recordScan({
@@ -133,11 +143,12 @@ export const runModule = (moduleId, moduleName, relativeDir, command, args, io) 
             timestamp: endTime,
         });
 
-        io.to(`module_${moduleId}`).emit('module_status_change', {
-            moduleId,
-            status: 'Error',
-            isRunning: false,
-        });
+        const errPayload = { moduleId, status: 'Error', isRunning: false };
+        io.to(`module_${moduleId}`).emit('module_status_change', errPayload);
+        io.emit('module_status_change', errPayload);
+
+        // Set cooldown even on crash so the button re-enables
+        if (typeof onComplete === 'function') onComplete();
 
         recordScan({
             moduleId,
@@ -182,11 +193,9 @@ export const stopModule = (moduleId, io) => {
         timestamp: new Date().toISOString(),
     });
 
-    io.to(`module_${moduleId}`).emit('module_status_change', {
-        moduleId,
-        status: 'Stopped',
-        isRunning: false,
-    });
+    const stopPayload = { moduleId, status: 'Stopped', isRunning: false };
+    io.to(`module_${moduleId}`).emit('module_status_change', stopPayload);
+    io.emit('module_status_change', stopPayload); // server-level broadcast
 
     return { success: true, message: `Module ${moduleId} terminated.` };
 };

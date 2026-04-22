@@ -606,13 +606,19 @@ harden_ssh() {
         print_message "$RED" "║ 2. Keep password authentication enabled (less secure)        ║"
         print_message "$RED" "╚══════════════════════════════════════════════════════════════╝"
 
-        read -p "Keep password authentication enabled? (Y/n): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-            print_message "$YELLOW" "Password authentication will remain ENABLED for safety"
+        # SOC_PULSE_HEADLESS: auto-answer Y to keep password auth (safe for AWS)
+        if [[ "${SOC_PULSE_HEADLESS:-false}" == "true" ]]; then
+            print_message "$YELLOW" "[AWS-SAFE] No SSH keys found — keeping PasswordAuthentication enabled (headless mode)"
             password_auth="yes"
         else
-            print_message "$RED" "Proceeding with password authentication DISABLED - ensure you have console access!"
+            read -p "Keep password authentication enabled? (Y/n): " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                print_message "$YELLOW" "Password authentication will remain ENABLED for safety"
+                password_auth="yes"
+            else
+                print_message "$RED" "Proceeding with password authentication DISABLED - ensure you have console access!"
+            fi
         fi
     else
         print_message "$GREEN" "SSH keys found. Safe to disable password authentication."
@@ -636,7 +642,7 @@ PasswordAuthentication ${password_auth}
 PermitEmptyPasswords no
 ChallengeResponseAuthentication no
 UsePAM yes
-MaxAuthTries 3
+MaxAuthTries 6
 MaxSessions 10
 EOF
 
@@ -685,8 +691,18 @@ EOF
     # Test SSH configuration
     sshd -t || error_exit "SSH configuration test failed"
 
-    # Restart SSH
-    systemctl restart sshd
+    # ── AWS-SAFE SSH Restart ────────────────────────────────────────────────
+    # CRITICAL: On AWS EC2, restarting SSH drops the connection.
+    # SOC_PULSE_HEADLESS is set by ubuntu-aws-hardening.sh orchestrator.
+    # 'reload' re-reads config without killing active sessions.
+    if [[ "${SOC_PULSE_HEADLESS:-false}" == "true" ]]; then
+        print_message "$YELLOW" "[AWS-SAFE] Using 'systemctl reload ssh' instead of restart to preserve connections..."
+        systemctl reload ssh || systemctl reload sshd || true
+        print_message "$GREEN" "[✓] SSH config reloaded (existing sessions preserved)"
+    else
+        # Standard restart for non-AWS / interactive environments
+        systemctl restart sshd
+    fi
 
     print_message "$GREEN" "SSH hardened successfully"
     if [[ "$password_auth" == "yes" ]]; then

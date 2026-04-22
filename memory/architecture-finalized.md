@@ -2,6 +2,38 @@
 
 ---
 
+## Session 3.7 — Log Analysis: Module 4 CVE False-Positive Bug Fix
+
+### 🧪 Real AWS Run Results (Ubuntu 22.04 / Kernel 6.8.0-1046-aws)
+| CVE | Actual Result | Old Summary | Fixed Summary |
+|-----|--------------|-------------|---------------|
+| CVE-2024-3094 | SAFE (xz 5.2.5) | 🔴 VULNERABLE (false+) | ✅ SAFE |
+| CVE-2024-6387 | PATCHED (LoginGraceTime 0) | 🟡 PATCHED | 🟡 PATCHED |
+| CVE-2023-4911 | SAFE (glibc 2.35-0ubuntu3.13) | 🔴 VULNERABLE (false+) | ✅ SAFE |
+| CVE-2021-4034 | PATCHED (SUID removed) | 🟡 PATCHED | 🟡 PATCHED |
+| CVE-2022-0847 | SAFE (kernel 6.8) | 🔴 VULNERABLE (false+) | ✅ SAFE |
+| CVE-2021-44228 | SAFE (no JARs) | ✅ SAFE | ✅ SAFE |
+
+### 🐛 Root Cause: Status Detection Priority Bug
+```bash
+# OLD (broken): "NOT VULNERABLE" matched "VULNERABLE" grep first
+if grep -qi "CRITICAL|VULNERABLE|..."; then  # ← matched "NOT VULNERABLE"!
+    if grep -qi "PATCHED|..."; then PATCHED
+    else VULNERABLE  # ← false positive
+fi
+
+# FIXED: PATCHED checked first, then SAFE, then VULNERABLE last
+if grep -qi "PATCHED|MITIGATED|..."; then PATCHED
+elif grep -qi "SAFE|NOT VULNERABLE|..."; then SAFE
+elif grep -qi "CRITICAL|VULNERABLE|..."; then VULNERABLE  # now safe
+```
+
+### 🔧 Additional Fix: CVE-2024-6387 sshd reload
+- Was: Staged config change + message saying "restart ssh when safe"
+- Fixed: Now auto-applies `systemctl reload ssh` (preserves sessions)
+
+---
+
 ## Session 3.6 — CRITICAL: AWS SSH Lockout Fix (All Hardening Scripts)
 
 ### 🚨 Root Cause Identified

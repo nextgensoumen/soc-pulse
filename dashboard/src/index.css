@@ -123,13 +123,16 @@ body::before {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-width: 0; /* prevent flex blowout */
   overflow: hidden;
 }
 
 .content-area {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 24px;
+  scroll-behavior: smooth;
 }
 
 /* Component Styles: Sidebar */
@@ -240,10 +243,14 @@ body::before {
 .topbar {
   height: 70px;
   margin: 16px 16px 0 16px;
-  padding: 0 24px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+  /* Fixed height — never scrolls away because it lives outside content-area */
+  flex-shrink: 0;
+  z-index: 100;
 }
 
 .search-bar {
@@ -253,7 +260,8 @@ body::before {
   border: 1px solid var(--panel-border);
   border-radius: 8px;
   padding: 8px 16px;
-  width: 300px;
+  width: 260px;
+  flex-shrink: 0;
 }
 
 .search-input {
@@ -332,8 +340,11 @@ body::before {
 
 .modules-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
   gap: 24px;
+  /* Prevent grid from ever overflowing the viewport */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Component Styles: Module Card */
@@ -341,6 +352,7 @@ body::before {
   padding: 20px;
   display: flex;
   flex-direction: column;
+  min-width: 0; /* prevent card from overflowing grid */
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 

@@ -131,6 +131,7 @@ function App() {
       <FallingSunflowers />
       <Sidebar activeView={activeView} setActiveView={setActiveView} />
       <div className="main-content">
+        {/* TopBar is OUTSIDE the scrollable area — always visible */}
         <TopBar />
         <main className="content-area">
           {activeView === 'dashboard' ? (

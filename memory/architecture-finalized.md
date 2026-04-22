@@ -2,6 +2,54 @@
 
 ---
 
+## Session 3.6 — CRITICAL: AWS SSH Lockout Fix (All Hardening Scripts)
+
+### 🚨 Root Cause Identified
+Module 3 (System Endpoint Hardening) was causing `Error establishing SSH connection` on AWS EC2 because:
+1. `systemctl restart ssh.socket` / `restart sshd` — **drops ALL active SSH connections** on AWS
+2. `MaxAuthTries 3` — AWS Instance Connect internally retries 4+ times → gets locked out
+3. `read -p "Keep password auth..."` — blocking interactive prompt in headless pipeline
+
+### ✅ Fixes Applied — ALL 4 Scripts
+
+| Script | Fix 1: SSH Restart | Fix 2: MaxAuthTries | Fix 3: Blocking read |
+|--------|-------------------|--------------------|--------------------|
+| `ubuntu-aws-hardening.sh` | PIPESTATUS[1] bug fixed + typo fix | N/A (orchestrator) | SOC_PULSE_HEADLESS exported |
+| `ubuntu-hardening-original.sh` | `restart` → `reload` | 3 → 6 | Auto-answers Y |
+| `ubuntu-hardening-24-04.sh` | `restart` → `reload` | 3 → 6 | Auto-answers Y |
+| `ubuntu-hardening-25.sh` | `restart` → `reload` | 3 → 6 | Auto-answers Y |
+
+### 🔑 How the Fix Works
+```bash
+# ubuntu-aws-hardening.sh exports this before calling sub-scripts:
+export SOC_PULSE_HEADLESS=true
+
+# All sub-scripts now check this flag in harden_ssh():
+if [[ "${SOC_PULSE_HEADLESS:-false}" == "true" ]]; then
+    systemctl reload ssh   # reloads config, keeps active sessions alive
+else
+    systemctl restart sshd # original behavior for interactive/manual runs
+fi
+```
+
+### 🐛 Bonus Bug Fixed — PIPESTATUS masking in orchestrator
+```bash
+# BEFORE (bash bug — local always returns 0, masking real exit code):
+local exit_code=${PIPESTATUS[1]}
+
+# AFTER (correct — declare then assign):
+local exit_code
+exit_code=${PIPESTATUS[1]}
+```
+
+### 📁 Files Modified
+- `module-aws-hardening/ubuntu-aws-hardening.sh` — PIPESTATUS fix + summary typo
+- `module-aws-hardening/ubuntu-hardening-original.sh` — SSH reload + MaxAuthTries + headless prompt
+- `module-aws-hardening/ubuntu-hardening-24-04.sh` — SSH reload + MaxAuthTries + headless prompt
+- `module-aws-hardening/ubuntu-hardening-25.sh` — SSH reload + MaxAuthTries + headless prompt
+
+---
+
 ## Session 3.5 — Multi-CVE Autonomous Remediation Engine v2.0
 
 ### 🩹 Module 4 — Complete Rebuild

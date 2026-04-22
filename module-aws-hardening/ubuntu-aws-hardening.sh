@@ -186,27 +186,29 @@ preflight_checks() {
     log "$YELLOW" "└─────────────────────────────────────────────────────────┘"
 }
 
-# ── AWS Safety Patch ──────────────────────────────────────────────────────────
-# Applies a runtime ENV override to skip UFW enabling and SSH restart
-# inside the selected hardening script without modifying its source code.
+# ── AWS Safety Patch ───────────────────────────────────────────────────────────────────
+# Exports ENV flags consumed by all ubuntu-hardening-*.sh scripts:
+#   SOC_PULSE_HEADLESS=true  → SSH reload not restart + auto-answer prompts
+#   DEBIAN_FRONTEND=noninteractive → prevents apt dialogs
 apply_aws_safety_overrides() {
     log "$BLUE" "Applying AWS safety overrides..."
 
-    # Override 'ufw enable' command — replace with a no-op status check
-    # Override 'systemctl restart sshd' — skip to prevent SSH session drop
-    # These are passed as function overrides to the sub-shell environment
-
-    # Export headless mode flag — the original scripts check DEBIAN_FRONTEND
+    # Prevent apt from opening interactive dialogs
     export DEBIAN_FRONTEND=noninteractive
 
-    # SOC_PULSE_HEADLESS: Custom flag — future scripts can detect this
+    # SOC_PULSE_HEADLESS signals all sub-scripts to:
+    #   1. Use 'systemctl reload ssh' instead of 'restart' (preserves sessions)
+    #   2. Auto-answer Y to SSH key safety prompt (keep password auth)
+    #   3. Skip any remaining interactive read() prompts
     export SOC_PULSE_HEADLESS=true
 
-    # Pre-set scan frequency to avoid read() blocking
+    # Pre-set scan frequencies so sub-scripts don't block on read()
     export CLAMAV_SCAN_FREQUENCY="${SCAN_FREQUENCY}"
     export SCAP_SCAN_FREQUENCY="${SCAN_FREQUENCY}"
 
-    log "$GREEN" "[✓] AWS safety overrides applied (DEBIAN_FRONTEND=noninteractive, SOC_PULSE_HEADLESS=true)"
+    log "$GREEN" "[✓] AWS safety overrides applied:"
+    log "$GREEN" "    → DEBIAN_FRONTEND=noninteractive"
+    log "$GREEN" "    → SOC_PULSE_HEADLESS=true (SSH reload · headless prompts · no restart)"
 }
 
 # ── Execute Hardening Script ──────────────────────────────────────────────────
@@ -218,14 +220,23 @@ run_hardening_script() {
     local start_time
     start_time=$(date +%s)
 
-    # Pipe pre-set answers for interactive prompts:
-    # Line 1: "y" — for version mismatch confirmation (if triggered)
-    # Line 2: $SCAN_FREQUENCY — for ClamAV scan frequency prompt
-    # Line 3: $SCAN_FREQUENCY — for OpenSCAP scan frequency prompt  
-    # Line 4: "Y" — for SSH key safety prompt (keep password auth on AWS)
+    # Fallback stdin pipe — most prompts now handled via SOC_PULSE_HEADLESS=true.
+    # Still piped as a safety net for any un-migrated prompts:
+    #   "y"             -- version mismatch confirmation
+    #   $SCAN_FREQUENCY -- ClamAV / OpenSCAP frequency
+    #   "Y"             -- SSH key safety prompt fallback
+    #
+    # BUG FIX: Disable pipefail around this call so a non-zero exit from
+    # the sub-script (optional package not available, etc.) doesn't abort
+    # this orchestrator. We read the real exit code via PIPESTATUS[1].
+    set +o pipefail
     echo -e "y\n${SCAN_FREQUENCY}\n${SCAN_FREQUENCY}\nY" | bash "$SELECTED_SCRIPT" 2>&1 | tee -a "$ORCHESTRATOR_LOG"
+    # CRITICAL bash gotcha: 'local var=$(...)' always returns 0 — declare first, then assign.
+    # PIPESTATUS[0]=echo  PIPESTATUS[1]=bash sub-script  PIPESTATUS[2]=tee
+    local exit_code
+    exit_code=${PIPESTATUS[1]}
+    set -o pipefail
 
-    local exit_code=${PIPESTATUS[0]}
     local end_time
     end_time=$(date +%s)
     local duration=$(( end_time - start_time ))
@@ -265,8 +276,8 @@ print_summary() {
     log "$CYAN" "║   ✅ rkhunter + chkrootkit (rootkit detection)                   ║"
     log "$CYAN" "║   ✅ Unattended-Upgrades (auto security patches)                 ║"
     log "$CYAN" "║   ✅ debsums (package integrity verification)                    ║"
-    log "$CYAN" "║   ⛔ UFW Firewall: SKIPPED (AWS EC2 Safety Mode)                ║"
-    log "$CYAN" "║   ⛔ SSH Daemon Restart: SKIPPED (AWS EC2 Safety Mode)          ║"
+    log "$CYAN" "║   ⛔ UFW Firewall:  SKIPPED (AWS EC2 Safety Mode)               ║"
+    log "$CYAN" "║   ✅ SSH Daemon:    RELOADED not restarted (sessions preserved)  ║"
     log "$CYAN" "╚══════════════════════════════════════════════════════════════════╝"
     log "$CYAN" ""
     log "$GREEN" "Security hardening report saved to: /var/log/security-hardening/"

@@ -1170,7 +1170,7 @@ ChallengeResponseAuthentication no
 KerberosAuthentication no
 GSSAPIAuthentication no
 UsePAM yes
-MaxAuthTries 3
+MaxAuthTries 6
 MaxSessions 10
 EOF
 
@@ -1311,8 +1311,18 @@ EOF
     # Update main sshd_config to use banner
     echo "Banner /etc/issue.net" >> /etc/ssh/sshd_config.d/99-hardening.conf
 
-    # Restart SSH service (Ubuntu 24.04 uses socket activation)
-    systemctl restart ssh.socket
+    # ── AWS-SAFE SSH Restart ────────────────────────────────────────────────
+    # CRITICAL: On AWS EC2, restarting SSH can break the connection.
+    # SOC_PULSE_HEADLESS is set by ubuntu-aws-hardening.sh orchestrator.
+    # We use 'reload' instead of 'restart' — reloads config without dropping sessions.
+    if [[ "${SOC_PULSE_HEADLESS:-false}" == "true" ]]; then
+        print_message "$YELLOW" "[AWS-SAFE] Using 'systemctl reload ssh' instead of restart to preserve connections..."
+        systemctl reload ssh || systemctl reload sshd || true
+        print_message "$GREEN" "[✓] SSH config reloaded (existing sessions preserved)"
+    else
+        # Standard restart for non-AWS environments
+        systemctl restart ssh.socket
+    fi
 
     print_message "$GREEN" "SSH hardened successfully"
     if [[ "$password_auth" == "no" ]]; then

@@ -250,7 +250,7 @@ install_packages() {
         "apparmor-utils"
         "apparmor-profiles"
         "apparmor-profiles-extra"
-        "apparmor-notify"
+        # apparmor-notify removed — requires GUI/desktop session (pulls in 60+ X11/GTK packages)
 
         # Antivirus and malware detection
         "clamav"
@@ -264,7 +264,8 @@ install_packages() {
 
         # Firewall
         "ufw"
-        "gufw"
+        # gufw removed — GUI-only tool that installs 115+ desktop packages (mesa/WebKit/GTK)
+        # on a headless AWS server; UFW is managed via CLI
 
         # Intrusion detection/prevention
         "fail2ban"

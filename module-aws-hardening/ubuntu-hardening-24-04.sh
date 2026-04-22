@@ -141,7 +141,8 @@ validate_frequency() {
             echo "$frequency"
             ;;
         *)
-            print_message "$YELLOW" "Invalid frequency. Using 'weekly' as default."
+            # ⚠ Write to STDERR — stdout would pollute scan_frequency=$(validate_frequency ...)
+            print_message "$YELLOW" "Invalid frequency. Using 'weekly' as default." >&2
             echo "weekly"
             ;;
     esac
@@ -362,11 +363,13 @@ EOF
 
     # Initialize AIDE database
     print_message "$GREEN" "Initializing AIDE database (this may take several minutes)..."
+    # NON-INTERACTIVE: remove old .new DB first to prevent 'Overwrite [Yn]?' prompt
+    rm -f /var/lib/aide/aide.db.new
     aideinit || error_exit "Failed to initialize AIDE"
 
-    # Move database to production location
+    # Copy database to production location non-interactively (no prompt unlike mv)
     if [[ -f /var/lib/aide/aide.db.new ]]; then
-        mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db
+        cp -f /var/lib/aide/aide.db.new /var/lib/aide/aide.db
         chmod 600 /var/lib/aide/aide.db
         print_message "$GREEN" "AIDE database initialized successfully"
     fi
@@ -758,10 +761,16 @@ EOF
     systemctl enable clamav-freshclam
     systemctl enable clamav-daemon
 
-    # Get scan frequency
-    print_message "$GREEN" "Please enter how often you want ClamAV scans to run (daily/weekly/monthly):"
-    read -r scan_frequency
-    scan_frequency=$(validate_frequency "$scan_frequency")
+    # Get scan frequency — use headless env var or interactive prompt
+    if [[ "${SOC_PULSE_HEADLESS:-false}" == "true" ]]; then
+        scan_frequency="${CLAMAV_SCAN_FREQUENCY:-weekly}"
+        scan_frequency=$(validate_frequency "$scan_frequency")
+        print_message "$GREEN" "[AWS-SAFE] Using ClamAV scan frequency: $scan_frequency (headless mode)"
+    else
+        print_message "$GREEN" "Please enter how often you want ClamAV scans to run (daily/weekly/monthly):"
+        read -r scan_frequency
+        scan_frequency=$(validate_frequency "$scan_frequency")
+    fi
 
     # Create systemd timer for scans (Ubuntu 24.04 preferred)
     cat > /etc/systemd/system/clamav-scan.service << 'EOF'
@@ -985,17 +994,20 @@ EOF
     ufw allow 68/udp comment 'DHCP client'
 
     # Enable firewall
-    echo "y" | ufw enable
-
-    # Save firewall rules with netfilter-persistent (if available)
-    # Note: iptables-persistent removed to avoid conflicts with UFW (Fix for Issue #4)
-    if command -v netfilter-persistent &> /dev/null; then
-        netfilter-persistent save
-        systemctl enable netfilter-persistent
+    # ⛔ AWS-SAFE: UFW can disrupt EC2 networking. Skip when running headlessly.
+    if [[ "${SOC_PULSE_HEADLESS:-false}" == "true" ]]; then
+        print_message "$YELLOW" "[AWS-SAFE] UFW rules staged but NOT enabled (AWS Security Groups handle ingress)"
+        print_message "$YELLOW" "    To enable manually: sudo ufw enable"
+    else
+        echo "y" | ufw enable
+        # Save firewall rules with netfilter-persistent (if available)
+        if command -v netfilter-persistent &> /dev/null; then
+            netfilter-persistent save
+            systemctl enable netfilter-persistent
+        fi
+        print_message "$GREEN" "UFW firewall configured and enabled"
+        print_message "$YELLOW" "NOTE: Only SSH (rate-limited) and DHCP are allowed"
     fi
-
-    print_message "$GREEN" "UFW firewall configured and enabled"
-    print_message "$YELLOW" "NOTE: Only SSH (rate-limited) and DHCP are allowed"
 }
 
 # Function to configure Fail2ban with Ubuntu 24.04 optimizations
@@ -1634,10 +1646,16 @@ configure_openscap() {
 
     print_message "$GREEN" "Configuring OpenSCAP for Ubuntu 24.04..."
 
-    # Get scan frequency
-    print_message "$GREEN" "Please enter how often you want OpenSCAP scans to run (daily/weekly/monthly):"
-    read -r oscap_frequency
-    oscap_frequency=$(validate_frequency "$oscap_frequency")
+    # Get scan frequency — use headless env var or interactive prompt
+    if [[ "${SOC_PULSE_HEADLESS:-false}" == "true" ]]; then
+        oscap_frequency="${SCAP_SCAN_FREQUENCY:-weekly}"
+        oscap_frequency=$(validate_frequency "$oscap_frequency")
+        print_message "$GREEN" "[AWS-SAFE] Using OpenSCAP scan frequency: $oscap_frequency (headless mode)"
+    else
+        print_message "$GREEN" "Please enter how often you want OpenSCAP scans to run (daily/weekly/monthly):"
+        read -r oscap_frequency
+        oscap_frequency=$(validate_frequency "$oscap_frequency")
+    fi
 
     # Find the appropriate SCAP content
     local ssg_file="/usr/share/xml/scap/ssg/content/ssg-ubuntu2204-ds.xml"

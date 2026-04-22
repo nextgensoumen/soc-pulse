@@ -20,6 +20,9 @@ IFS=$'\n\t'       # Set secure Internal Field Separator
 readonly RED='\033[0;31m'
 readonly GREEN='\033[0;32m'
 readonly YELLOW='\033[0;33m'
+readonly BLUE='\033[0;34m'
+readonly CYAN='\033[0;36m'
+readonly BOLD='\033[1m'
 readonly NC='\033[0m' # No Color
 
 # Global variables
@@ -213,19 +216,23 @@ install_packages() {
 # Function to configure AIDE
 configure_aide() {
     print_message "$GREEN" "Configuring AIDE file integrity checker..."
-    
+
     # Initialize AIDE database
     if command -v aideinit &> /dev/null; then
+        # ── NON-INTERACTIVE: remove old .new database first to prevent the
+        # interactive 'Overwrite existing aide.db.new [Yn]?' prompt.
+        rm -f /var/lib/aide/aide.db.new
         aideinit || error_exit "Failed to initialize AIDE"
-        
-        # Move the new database to production
+
+        # Move the new database to production non-interactively.
+        # aideinit leaves db at aide.db.new; we copy directly.
         if [[ -f /var/lib/aide/aide.db.new ]]; then
-            mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db
+            cp -f /var/lib/aide/aide.db.new /var/lib/aide/aide.db
             print_message "$GREEN" "AIDE database initialized successfully"
         else
             print_message "$YELLOW" "WARNING: AIDE database file not found at expected location"
         fi
-        
+
         # Create AIDE check cron job
         cat > /etc/cron.daily/aide-check << 'EOF'
 #!/bin/bash
@@ -530,10 +537,16 @@ configure_ufw() {
 EOF
 
     # Enable firewall
-    echo "y" | ufw enable
-
-    print_message "$GREEN" "UFW firewall configured and enabled"
-    print_message "$YELLOW" "WARNING: Only SSH is allowed. Configure additional rules as needed."
+    # ⛔ AWS-SAFE: On AWS EC2, enabling UFW can break security group traffic.
+    # SOC_PULSE_HEADLESS=true means we're running under the orchestrator — skip enable.
+    if [[ "${SOC_PULSE_HEADLESS:-false}" == "true" ]]; then
+        print_message "$YELLOW" "[AWS-SAFE] UFW rules staged but NOT enabled (AWS Security Groups handle ingress)"
+        print_message "$YELLOW" "    To enable manually when safe: sudo ufw enable"
+    else
+        echo "y" | ufw enable
+        print_message "$GREEN" "UFW firewall configured and enabled"
+        print_message "$YELLOW" "WARNING: Only SSH is allowed. Configure additional rules as needed."
+    fi
 }
 
 # Function to configure Fail2ban

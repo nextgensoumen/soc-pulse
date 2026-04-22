@@ -43,11 +43,11 @@ export const MODULE_REGISTRY = {
     4: {
         id: 4,
         name: 'Autonomous Remediation',
-        description: 'Detects and patches the XZ-Utils CVE-2024-3094 sshd backdoor.',
+        description: 'Multi-CVE scanner: Log4Shell, XZ-Backdoor, regreSSHion, Dirty Pipe, PwnKit, Looney Tunables.',
         icon: '🩹',
         dir: 'module-ir-cve-patcher',
         cmd: 'bash',
-        args: ['ubuntu-remediate.sh'],
+        args: ['cve-aws-orchestrator.sh'],
         cooldownSeconds: 60,
         threatLevel: 'High',
     },

@@ -2,6 +2,38 @@
 
 ---
 
+## Session 3.5 — Multi-CVE Autonomous Remediation Engine v2.0
+
+### 🩹 Module 4 — Complete Rebuild
+- **Entry point:** `module-ir-cve-patcher/cve-aws-orchestrator.sh`
+- **Old script kept:** `ubuntu-remediate.sh` (legacy reference)
+- **6 CVE sub-scripts** in `cves/` directory
+
+### CVEs Implemented
+| CVE | Name | CVSS | Fix Strategy |
+|-----|------|------|-------------|
+| CVE-2024-3094 | XZ Utils Backdoor | 10.0 | apt upgrade + source compile fallback |
+| CVE-2024-6387 | regreSSHion | 8.1 | LoginGraceTime 0 (no sshd restart) + upgrade |
+| CVE-2023-4911 | Looney Tunables | 7.8 | apt upgrade libc6 |
+| CVE-2021-4034 | PwnKit | 7.8 | Remove SUID bit immediately + upgrade polkit |
+| CVE-2022-0847 | Dirty Pipe | 7.8 | Stage kernel upgrade (no forced reboot) |
+| CVE-2021-44228 | Log4Shell | 10.0 | JAR scan + JNDI env mitigation globally |
+
+### 🔧 Orchestrator Features
+- `--dry-run` / `--check-only` flag: scan without making changes
+- CVSS score displayed per CVE in banner and scan headers
+- Color-coded summary table at end: SAFE/PATCHED/VULNERABLE/ERROR/SKIPPED
+- All scripts: fully headless, AWS-safe (no sshd restart, no forced reboot)
+- Upstream credit: `gensecaihq/CVE-2024-3094-Vulnerability-Checker-Fixer` (MIT)
+
+### 📄 README Rewrite
+- Full CVE deep-dives with CVSS scores
+- Architecture diagram
+- Status code table
+- AWS-safety explanation
+- Upstream credit table
+- Flow diagram: Dashboard → API → moduleRunner → WebSocket → Terminal
+
 ## Session 3 — PDF Report Generator + UI Layout Fixes
 
 ### 📊 PDF Report Generator (NEW FEATURE)

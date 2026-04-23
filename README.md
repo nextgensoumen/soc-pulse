@@ -97,53 +97,94 @@ SOC-Pulse/
 
 ---
 
-## 🚀 One-Command Cloud Deployment
+## 🚀 Step-by-Step Deployment Guide
 
-SOC Pulse is configured to be incredibly easy to spin up on any AWS Ubuntu instance. It comes packed with a global startup orchestrator that maps, patches, updates, and deploys the entire ecosystem instantly.
+SOC Pulse is designed as a "One-Command Deployment" ecosystem. It automatically handles system packages, Node.js installations, Process Managers (PM2), and compiling.
 
-**1. Clone the Repository on your AWS Ubuntu Instance:**
-*(Switch to root user first if desired: `sudo su -`)*
+### Prerequisite: AWS Security Group (Firewall)
+Before deploying, you **MUST** open the following inbound ports in your AWS EC2 Security Group:
+* **Port 22 (TCP):** SSH (Standard server access)
+* **Port 5000 (TCP):** Backend API & WebSocket Orchestrator
+* **Port 5173 (TCP):** Frontend React Dashboard
+* **Port 80 (TCP):** Required only if you intend to issue real Let's Encrypt IP-Certificates (HTTP-01 ACME Challenge).
+
+### Step 1: Clone the Repository
+SSH into your Ubuntu Server and switch to the root user, then clone the repository:
 ```bash
+sudo su -
 git clone https://github.com/nextgensoumen/soc-pulse.git
 cd soc-pulse
 ```
 
-**2. Ensure Execution Permissions:**
+### Step 2: Grant Execution Permissions
+Ensure the bootloader and underlying bash modules are allowed to execute:
 ```bash
 chmod +x soc-pulse-start.sh
 ```
 
-**3. Launch the Master Bootloader:**
+### Step 3: Run the Master Bootloader
+Launch the automated setup sequence:
 ```bash
 ./soc-pulse-start.sh
 ```
 
-### What Happens When You Run The Bootloader?
-* **Phase 1 (System Prep):** Updates system tools, suppresses interactive dpkg prompts (`DEBIAN_FRONTEND=noninteractive`), and safely installs Node.js v20 LTS.
-* **Phase 2 (PM2 Installation):** Installs the PM2 production process manager to keep the backend and dashboard running even after you close your SSH connection.
-* **Phase 3 (Module Compilation):** Automatically navigates into isolated TypeScript modules (like the Web App Scanner) and safely auto-compiles the TS logic into executable native binaries.
-* **Phase 4 (Launch):** Triggers `pm2` to launch the **Backend API (Port 5000)** and the **Vite Dashboard (Port 5173)**.
+#### What happens during setup?
+1. **System Prep:** Quietly updates `apt` packages, suppresses interactive OS prompts, and safely installs Node.js v20 LTS.
+2. **Process Manager:** Installs PM2 globally. This keeps the SOC Pulse backend and frontend running forever, even if you close your terminal.
+3. **Compilation:** Safely navigates into isolated modules, installs dependencies, and compiles TypeScript logic into executable binaries.
+4. **Daemon Launch:** Triggers PM2 to fork the Backend and Dashboard into background daemons.
 
-### 💻 Accessing the SOC Dashboard
-Once the script completes, navigate your browser directly to your AWS instance's IP interface:
-```
+### Step 4: Access the Dashboard
+Once the script successfully completes, navigate to your public AWS IP in your browser:
+```text
 http://<YOUR-AWS-PUBLIC-IP>:5173
 ```
-*(Ensure that inbound TCP rules for Port 5173 and 5000 are unblocked in your AWS VPC Security Group Console!)*
 
 ---
 
-## 🛠️ Management Commands
+## 🔄 Updating, Restarting, and Managing the Server
 
-Because SOC Pulse runs via `pm2`, your services will survive reboots and SSH disconnects. Use these commands to manage the platform from the server:
+Because SOC Pulse runs via **PM2**, the services will survive server reboots and SSH disconnects. If you push new code to GitHub, or need to debug an issue, use these exact commands.
 
+### How to pull new code and restart (The "Update" Command)
+If the repository has been updated, run this to pull changes and restart the application seamlessly:
 ```bash
-# View running SOC Pulse services
-pm2 list
-
-# Watch live output logs of the backend/dashboard
-pm2 logs
-
-# Restart all SOC Pulse services (useful after git pull)
+cd /home/ubuntu/soc-pulse
+git pull
 pm2 restart all
 ```
+
+### Essential PM2 Commands
+```bash
+# View the status of all running SOC Pulse services
+pm2 list
+
+# Watch a live, continuous stream of system logs (Ctrl+C to exit)
+pm2 logs
+
+# Restart specifically the backend API
+pm2 restart soc-pulse-backend
+
+# Restart specifically the React frontend
+pm2 restart soc-pulse-dashboard
+
+# Stop everything temporarily
+pm2 stop all
+```
+
+---
+
+## 🛠️ Troubleshooting & Common Issues
+
+**1. I can't access the dashboard (Site can't be reached)**
+* **Fix:** Check your AWS Security Group. Ensure **Inbound TCP Port 5173** is allowed from `0.0.0.0/0` (or your IP). 
+
+**2. The dashboard loads, but modules won't run or show "Offline"**
+* **Fix:** The frontend cannot reach the backend. Ensure **Inbound TCP Port 5000** is allowed in your AWS Security Group. 
+* **Fix:** Check if the backend crashed by running `pm2 list` and `pm2 logs soc-pulse-backend`.
+
+**3. "Address already in use" error during setup**
+* **Fix:** Something else is running on port 5000 or 5173. The `soc-pulse-start.sh` script attempts to kill blocking processes automatically, but you can manually force clear them: `fuser -k 5000/tcp` and `fuser -k 5173/tcp`, then run `./soc-pulse-start.sh` again.
+
+**4. A module is stuck on "Running" indefinitely**
+* **Fix:** Click "Stop Execution" on the dashboard. If the UI is out of sync, refresh the page. The system is designed with hard-timeouts (e.g., 5 mins for Scanners) and will self-terminate hung processes automatically.

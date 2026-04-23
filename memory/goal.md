@@ -66,8 +66,31 @@ Build a unified Security Operations Center (SOC) platform combining 5 specialize
 | Web App Scanner | ✅ CLEAN | CVE-2025-55182 not vulnerable |
 | System Endpoint Hardening | ✅ COMPLETED | 10/11 controls, 510s |
 | Autonomous CVE Remediation | ✅ PATCHED | 4 safe, 2 auto-patched (PwnKit + regreSSHion) |
-| Machine IP Cryptography | ✅ COMPLETED | certbot not installed (audit-only, exit 1 → now shows Completed) |
+| Machine IP Cryptography | ✅ COMPLETED | 0.1s, all 8 sections, exit 0 |
+
+## Session 7 Fixes Applied (2026-04-23)
+### SSL Module — Rewritten as Node.js (audit.js)
+- **Root cause:** bash script hung at step 6 — DNS stall on AWS bypasses all curl timeouts
+- **Fix:** Replaced entire bash script with `audit.js` (Node.js) — zero network calls, pure local checks
+- **Result:** Completes in **0.1 seconds**, never hangs, all 8 sections output correctly
+- **Registry change:** `cmd: 'node', args: ['audit.js']`, timeout reduced from 10min → 2min
+
+### UI — Stuck "Running" Status Fixed
+- **Root cause:** Fast modules (0.1s) emit WebSocket 'Completed' before React renders 'Scanning'
+- **Fix:** `ModuleCard.toggleExecution()` now calls `fetchModuleStatuses()` at 500ms, 2s, 5s after start
+- **Files changed:** `dashboard/src/App.jsx`, `dashboard/src/components/ModuleCard.jsx`
+
+### moduleRunner.js — allowedExitCodes
+- Exit code 1 from SSL module now treated as Completed (not Failed)
+- `modules.registry.js`: `allowedExitCodes: [1]` on Module 5
+- `moduleRunner.js`: checks `moduleConfig.allowedExitCodes` before setting status
+- `api.js`: passes full module config object to runModule
+
+## Update Command (on existing server)
+```bash
+cd /home/ubuntu/soc-pulse && git pull && pm2 restart all
+```
 
 ## Memory Tracking
 AI continuously updates `memory/` to reflect current state.
-Last updated: 2026-04-23 (Session 6 — Live cloud test, all 5 modules confirmed, SSL exit code fix)
+Last updated: 2026-04-23 (Session 7 — All 5 modules working, SSL rewritten Node.js, UI status bug fixed)

@@ -71,13 +71,12 @@ export const MODULE_REGISTRY = {
         description: 'Audits Certbot ACME configurations for 6-day IP certificate rotations.',
         icon: '🔑',
         dir: 'module-aws-ssl-manager',
-        cmd: 'bash',
-        args: ['ubuntu-cert-manager.sh'],
+        cmd: 'node',
+        args: ['audit.js'],
         cooldownSeconds: 30,
-        timeoutSeconds:  10 * 60,  // 10 min (cert operations + ACME challenge)
+        timeoutSeconds:  2 * 60,   // 2 min max (pure local checks, should finish in <2s)
         threatLevel: 'Low',
-        // exit code 1 = dependency warning (certbot not yet installed)
-        // audit still ran successfully — treat as Completed not Failed
+        // exit 0 always — this module never hangs, pure Node.js local audit
         allowedExitCodes: [1],
     },
 };

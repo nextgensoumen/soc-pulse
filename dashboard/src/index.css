@@ -416,17 +416,18 @@ body::before {
 /* Loading Bar Animation */
 @keyframes scannerSweep {
   0% { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
+  100% { transform: translateX(300%); }
 }
 
 .module-loading-bar {
-  height: 4px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 2px;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 214, 0, 0.2);
+  border-radius: 4px;
   overflow: hidden;
   position: relative;
   margin-bottom: 20px;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
 }
 
 .module-loading-fill {
@@ -434,10 +435,10 @@ body::before {
   top: 0; 
   left: 0; 
   height: 100%; 
-  width: 50%;
-  background: linear-gradient(90deg, transparent, var(--primary), #fff, var(--primary), transparent);
-  animation: scannerSweep 1.2s ease-in-out infinite;
-  box-shadow: 0 0 10px var(--primary-glow);
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgba(255, 214, 0, 0.8), #fff, rgba(255, 214, 0, 0.8), transparent);
+  animation: scannerSweep 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  box-shadow: 0 0 15px var(--primary-glow);
 }
 
 .card-footer {

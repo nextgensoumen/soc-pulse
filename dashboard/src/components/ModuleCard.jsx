@@ -82,7 +82,7 @@ const ModuleCard = ({ id, title, description, icon, status, threatLevel, isRunni
       <div className="card-body">
         <p className="card-desc">{description}</p>
         
-        {isRunning && (
+        {(isRunning || status.toLowerCase() === 'scanning') && (
           <div className="module-loading-bar" title="Module is executing...">
             <div className="module-loading-fill"></div>
           </div>

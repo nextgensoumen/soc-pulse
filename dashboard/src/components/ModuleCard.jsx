@@ -75,14 +75,14 @@ const ModuleCard = ({ id, title, description, icon, status, threatLevel, isRunni
           <h3 className="card-title">{title}</h3>
         </div>
         <div className={`status-badge ${getStatusColor()}`}>
-          {isRunning ? 'Running' : status}
+          {isRunning ? 'Scanning...' : status}
         </div>
       </div>
       
       <div className="card-body">
         <p className="card-desc">{description}</p>
         
-        {(isRunning || status.toLowerCase() === 'scanning') && (
+        {isRunning && (
           <div className="module-loading-bar" title="Module is executing...">
             <div className="module-loading-fill"></div>
           </div>

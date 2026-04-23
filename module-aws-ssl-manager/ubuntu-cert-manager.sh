@@ -245,7 +245,11 @@ section_network() {
     echo -e "\n${BOLD}━━ [6/8] Network & HTTP-01 Challenge Readiness ━━━━━━━━━━━━━━━━━${NC}"
 
     # Connectivity to ACME staging
-    if curl -s --connect-timeout 5 --max-time 8 "$STAGING_ACME_URL" &>/dev/null; then
+    # In headless/audit mode: skip live curl check — DNS stalls indefinitely on AWS
+    # regardless of --connect-timeout or --max-time flags (DNS resolves at libc level)
+    if [[ "${HEADLESS:-false}" == "true" ]]; then
+        log INFO "ACME staging connectivity: skipped in audit mode (headless)"
+    elif curl -s --connect-timeout 5 --max-time 8 "$STAGING_ACME_URL" &>/dev/null; then
         log INFO "ACME staging connectivity: ✓ reachable"
     else
         log WARN "ACME staging connectivity: FAILED (exit code 4)"

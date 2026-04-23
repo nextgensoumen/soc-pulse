@@ -1,388 +1,75 @@
-# Final Project Architecture Validation
-
----
-
-## Session 4.0 — Full Platform Status Audit — ALL OK ✅
-
-### 📅 2026-04-22 | Branch: main | 12 commits this session
-
-### ✅ Module 3 — System Endpoint Hardening
-| Fix | Status |
-|-----|--------|
-| SSH restart→reload (all 3 scripts) | ✅ |
-| PIPESTATUS[1] unbound variable crash | ✅ |
-| validate_frequency stdout→stderr (cron path fix) | ✅ |
-| ClamAV/OpenSCAP headless read guard | ✅ |
-| BLUE unbound variable at line 922 | ✅ |
-| UFW enabled on AWS — headless guard added | ✅ |
-| AIDE overwrite prompts (rm -f + cp -f) | ✅ |
-
-### ✅ Module 4 — Autonomous CVE Remediation
-| Fix | Status |
-|-----|--------|
-| PATCHED > SAFE > VULNERABLE priority (false-positive fix) | ✅ |
-| CVE-6387 sshd restart→reload | ✅ |
-| Module 4 won't run after Module 3 (cooldown socket bug) | ✅ |
-
-### ✅ Backend — moduleRunner.js / api.js
-| Fix | Status |
-|-----|--------|
-| onComplete callback replaces broken socket-room cooldown | ✅ |
-| SOC_PULSE_HEADLESS + DEBIAN_FRONTEND injected for ALL modules | ✅ |
-| Server-level io.emit() added for status change | ✅ |
-
-### ✅ Module 5 — Machine IP Cryptography (CLONED from repo)
-| Feature | Status |
-|---------|--------|
-| --audit, --status, --integrity-check, --list, --force-renew | ✅ |
-| FORCE/QUIET/STAGING/DEBUG env vars | ✅ |
-| Exit codes 0-99 (per API_REFERENCE.md) | ✅ |
-| Config loader + init system detection | ✅ |
-
-### 📌 Remaining Items
-- ubuntu-hardening-24-04.sh UFW headless guard (not yet patched)
-- Ansible fleet scanning (CVE repo) → Module 4 integration pending
-- Run Module 3 (Run 3) on AWS to confirm 0 errors
-
----
-
-## Session 3.9 — Module 3 Run 2: 4 Additional Bugs Fixed
-
-### 🧪 Real AWS Run 2 (Ubuntu 22.04) — Near-Success, Exit Code 0 But 4 Issues
-
-| # | Bug | Location | Severity |
-|---|-----|----------|---------|
-| 1 | `BLUE: unbound variable` at line 922 | `configure_cloud_security()` | 🔴 Crash |
-| 2 | UFW actually enabled on AWS EC2 | `configure_ufw()` | 🔴 Dangerous |
-| 3 | AIDE `Overwrite aide.db.new [Yn]?` prompt | `configure_aide()` | 🟡 Interactive |
-| 4 | AIDE `Overwrite aide.db [yN]?` prompt | `configure_aide()` | 🟡 Interactive |
-
-### 🐛 Bug 1 — $BLUE Unbound Variable
-```bash
-# ubuntu-hardening-original.sh only defined RED, GREEN, YELLOW, NC
-# configure_cloud_security() at line 922 used $BLUE → crash with set -u
-# Fix: added missing colors
-readonly BLUE='\033[0;34m'
-readonly CYAN='\033[0;36m'
-readonly BOLD='\033[1m'
-```
-
-### 🐛 Bug 2 — UFW Enabled Despite AWS Safety Mode
-```bash
-# Root cause: 'echo "y" | ufw enable' has NO headless guard
-# ufw reads from /dev/tty not stdin — so ALWAYS prompts and enables
-# Fix: wrap ufw enable in SOC_PULSE_HEADLESS check
-if [[ "${SOC_PULSE_HEADLESS:-false}" == "true" ]]; then
-    echo "[AWS-SAFE] UFW rules staged but NOT enabled"
-else
-    echo "y" | ufw enable
-fi
-```
-
-### 🐛 Bug 3+4 — AIDE Interactive Prompts
-```bash
-# aideinit prompts: 'Overwrite aide.db.new [Yn]?' and 'Overwrite aide.db [yN]?'
-# Fix: rm -f before init + cp -f instead of mv (no prompt)
-rm -f /var/lib/aide/aide.db.new   # prevent first prompt
-aideinit
-cp -f /var/lib/aide/aide.db.new /var/lib/aide/aide.db  # no prompt
-```
-
-### 📋 Hardening Status After Run 2 (Ubuntu 22.04)
-All 9 core controls applied: Kernel Sysctls ✅ | AuditD ✅ | Fail2Ban ✅ | AppArmor ✅ | ClamAV weekly ✅ | AIDE ✅ | rkhunter+chkrootkit ✅ | Unattended-Upgrades ✅ | debsums ✅ | UFW SKIPPED ✅ | SSH RELOADED ✅
-
----
-
-## Session 3.8 — Module 3 Log Analysis: 3 Critical Crash Bugs Fixed
-
-### 🧪 Real AWS Run (Ubuntu 22.04 / ubuntu-hardening-original.sh v2.0)
-Run crashed at ClamAV config with: `ubuntu-aws-hardening.sh: line 237: PIPESTATUS[1]: unbound variable`
-
-### 🐛 Bug 1 — PIPESTATUS[1] Unbound Variable (orchestrator crash)
-```bash
-# Root cause: 'set -u' (nounset) + accessing array index [1] when array may have 1 element
-local exit_code
-exit_code=${PIPESTATUS[1]}  # ← CRASH if PIPESTATUS has only 1 element
-
-# Fix: capture full array first, use default with parameter expansion
-local _ps=( "${PIPESTATUS[@]}" )
-local exit_code="${_ps[1]-1}"  # nounset-safe, default 1 if unset
-```
-
-### 🐛 Bug 2 — validate_frequency() Stdout Pollution (broken cron path)
-```bash
-# Root cause: print_message writes to STDOUT, polluting $(validate_frequency "y")
-# Result: scan_frequency = "[ANSI_COLOR]... Invalid frequency. Using weekly... weekly"
-# Then: cat > "/etc/cron.[ANSI]...weekly/clamav_scan" → No such file or directory
-
-# Fix: redirect warning to STDERR in validate_frequency
-print_message "$YELLOW" "Invalid frequency..." >&2  # ← stderr, not stdout
-echo "weekly"
-```
-
-### 🐛 Bug 3 — ClamAV `read -r scan_frequency` consuming wrong pipe token
-```bash
-# Root cause: orchestrator piped "y\nweekly\nweekly\nY" but 'y' was consumed by
-# ClamAV's read (not version mismatch check which was skipped for 22.04).
-# 'y' → validate_frequency("y") → invalid → stdout-polluted variable
-
-# Fix 1: orchestrator now pipes only "y\nY" (removed frequency tokens)
-# Fix 2: all 3 scripts now use SOC_PULSE_HEADLESS guard for ClamAV/OpenSCAP reads:
-if [[ "${SOC_PULSE_HEADLESS:-false}" == "true" ]]; then
-    scan_frequency="${CLAMAV_SCAN_FREQUENCY:-weekly}"  # use exported env var
-fi
-```
-
-### 📁 Files Modified (4 files, 3 scripts)
-- `ubuntu-aws-hardening.sh` — PIPESTATUS fix + removed frequency from pipe
-- `ubuntu-hardening-original.sh` — validate_frequency stderr + headless ClamAV/OpenSCAP + version check
-- `ubuntu-hardening-25.sh` — same fixes as original.sh
-
----
-
-## Session 3.7 — Log Analysis: Module 4 CVE False-Positive Bug Fix
-
-### 🧪 Real AWS Run Results (Ubuntu 22.04 / Kernel 6.8.0-1046-aws)
-| CVE | Actual Result | Old Summary | Fixed Summary |
-|-----|--------------|-------------|---------------|
-| CVE-2024-3094 | SAFE (xz 5.2.5) | 🔴 VULNERABLE (false+) | ✅ SAFE |
-| CVE-2024-6387 | PATCHED (LoginGraceTime 0) | 🟡 PATCHED | 🟡 PATCHED |
-| CVE-2023-4911 | SAFE (glibc 2.35-0ubuntu3.13) | 🔴 VULNERABLE (false+) | ✅ SAFE |
-| CVE-2021-4034 | PATCHED (SUID removed) | 🟡 PATCHED | 🟡 PATCHED |
-| CVE-2022-0847 | SAFE (kernel 6.8) | 🔴 VULNERABLE (false+) | ✅ SAFE |
-| CVE-2021-44228 | SAFE (no JARs) | ✅ SAFE | ✅ SAFE |
-
-### 🐛 Root Cause: Status Detection Priority Bug
-```bash
-# OLD (broken): "NOT VULNERABLE" matched "VULNERABLE" grep first
-if grep -qi "CRITICAL|VULNERABLE|..."; then  # ← matched "NOT VULNERABLE"!
-    if grep -qi "PATCHED|..."; then PATCHED
-    else VULNERABLE  # ← false positive
-fi
-
-# FIXED: PATCHED checked first, then SAFE, then VULNERABLE last
-if grep -qi "PATCHED|MITIGATED|..."; then PATCHED
-elif grep -qi "SAFE|NOT VULNERABLE|..."; then SAFE
-elif grep -qi "CRITICAL|VULNERABLE|..."; then VULNERABLE  # now safe
-```
-
-### 🔧 Additional Fix: CVE-2024-6387 sshd reload
-- Was: Staged config change + message saying "restart ssh when safe"
-- Fixed: Now auto-applies `systemctl reload ssh` (preserves sessions)
-
----
-
-## Session 3.6 — CRITICAL: AWS SSH Lockout Fix (All Hardening Scripts)
-
-### 🚨 Root Cause Identified
-Module 3 (System Endpoint Hardening) was causing `Error establishing SSH connection` on AWS EC2 because:
-1. `systemctl restart ssh.socket` / `restart sshd` — **drops ALL active SSH connections** on AWS
-2. `MaxAuthTries 3` — AWS Instance Connect internally retries 4+ times → gets locked out
-3. `read -p "Keep password auth..."` — blocking interactive prompt in headless pipeline
-
-### ✅ Fixes Applied — ALL 4 Scripts
-
-| Script | Fix 1: SSH Restart | Fix 2: MaxAuthTries | Fix 3: Blocking read |
-|--------|-------------------|--------------------|--------------------|
-| `ubuntu-aws-hardening.sh` | PIPESTATUS[1] bug fixed + typo fix | N/A (orchestrator) | SOC_PULSE_HEADLESS exported |
-| `ubuntu-hardening-original.sh` | `restart` → `reload` | 3 → 6 | Auto-answers Y |
-| `ubuntu-hardening-24-04.sh` | `restart` → `reload` | 3 → 6 | Auto-answers Y |
-| `ubuntu-hardening-25.sh` | `restart` → `reload` | 3 → 6 | Auto-answers Y |
-
-### 🔑 How the Fix Works
-```bash
-# ubuntu-aws-hardening.sh exports this before calling sub-scripts:
-export SOC_PULSE_HEADLESS=true
-
-# All sub-scripts now check this flag in harden_ssh():
-if [[ "${SOC_PULSE_HEADLESS:-false}" == "true" ]]; then
-    systemctl reload ssh   # reloads config, keeps active sessions alive
-else
-    systemctl restart sshd # original behavior for interactive/manual runs
-fi
-```
-
-### 🐛 Bonus Bug Fixed — PIPESTATUS masking in orchestrator
-```bash
-# BEFORE (bash bug — local always returns 0, masking real exit code):
-local exit_code=${PIPESTATUS[1]}
-
-# AFTER (correct — declare then assign):
-local exit_code
-exit_code=${PIPESTATUS[1]}
-```
-
-### 📁 Files Modified
-- `module-aws-hardening/ubuntu-aws-hardening.sh` — PIPESTATUS fix + summary typo
-- `module-aws-hardening/ubuntu-hardening-original.sh` — SSH reload + MaxAuthTries + headless prompt
-- `module-aws-hardening/ubuntu-hardening-24-04.sh` — SSH reload + MaxAuthTries + headless prompt
-- `module-aws-hardening/ubuntu-hardening-25.sh` — SSH reload + MaxAuthTries + headless prompt
-
----
-
-## Session 3.5 — Multi-CVE Autonomous Remediation Engine v2.0
-
-### 🩹 Module 4 — Complete Rebuild
-- **Entry point:** `module-ir-cve-patcher/cve-aws-orchestrator.sh`
-- **Old script kept:** `ubuntu-remediate.sh` (legacy reference)
-- **6 CVE sub-scripts** in `cves/` directory
-
-### CVEs Implemented
-| CVE | Name | CVSS | Fix Strategy |
-|-----|------|------|-------------|
-| CVE-2024-3094 | XZ Utils Backdoor | 10.0 | apt upgrade + source compile fallback |
-| CVE-2024-6387 | regreSSHion | 8.1 | LoginGraceTime 0 (no sshd restart) + upgrade |
-| CVE-2023-4911 | Looney Tunables | 7.8 | apt upgrade libc6 |
-| CVE-2021-4034 | PwnKit | 7.8 | Remove SUID bit immediately + upgrade polkit |
-| CVE-2022-0847 | Dirty Pipe | 7.8 | Stage kernel upgrade (no forced reboot) |
-| CVE-2021-44228 | Log4Shell | 10.0 | JAR scan + JNDI env mitigation globally |
-
-### 🔧 Orchestrator Features
-- `--dry-run` / `--check-only` flag: scan without making changes
-- CVSS score displayed per CVE in banner and scan headers
-- Color-coded summary table at end: SAFE/PATCHED/VULNERABLE/ERROR/SKIPPED
-- All scripts: fully headless, AWS-safe (no sshd restart, no forced reboot)
-- Upstream credit: `gensecaihq/CVE-2024-3094-Vulnerability-Checker-Fixer` (MIT)
-
-### 📄 README Rewrite
-- Full CVE deep-dives with CVSS scores
-- Architecture diagram
-- Status code table
-- AWS-safety explanation
-- Upstream credit table
-- Flow diagram: Dashboard → API → moduleRunner → WebSocket → Terminal
-
-## Session 3 — PDF Report Generator + UI Layout Fixes
-
-### 📊 PDF Report Generator (NEW FEATURE)
-- **File:** `dashboard/src/utils/reportGenerator.js`
-- Parses raw module log arrays → extracts metrics automatically:
-  - Packages installed (counts `Setting up ...` lines)
-  - Checks passed (counts `[✓]` lines)
-  - Warnings, Errors, Duration, Total log lines
-  - OS name/version/codename from log headers
-  - AWS Safety Mode detection
-- Generates a **self-contained beautiful HTML report page** (no server library needed):
-  - SOC Pulse branded header with module color theme
-  - 6 metric cards (packages, checks, warnings, errors, duration, log lines)
-  - AWS Safety Mode banner (when active)
-  - Color-coded log sections: OS Detection, Package Install, Security Config, Firewall, Audit, Warnings, Summary
-  - **"⬇ Download as PDF"** button → triggers browser `window.print()` → save as PDF
-- **Integration in `ModuleCard.jsx`:**
-  - Purple `📊 Report` button appears automatically after any module run completes
-  - Calls `openReport(moduleId, logs)` → opens report in new browser tab as a blob URL
-  - Button hidden while module is running or if no logs yet
-
-### 🔧 UI Layout Fixes (All Pushed)
-- **TopBar always visible:** Moved outside scrollable `content-area` as `flex-shrink: 0`
-- **Grid overflow fix:** `minmax(min(360px, 100%), 1fr)` — cards never overflow viewport
-- **Module card:** Added `min-width: 0` to prevent flex blowout
-- **Scroll behavior:** `scroll-behavior: smooth` + `overflow-x: hidden` on content-area
-- **`card-footer`:** Added `flex-wrap: wrap` so 3 buttons (Run/Logs/Report) always fit
-
-### ⚡ Performance Fix — Headless Server Package Bloat
-- **Removed from `ubuntu-hardening-24-04.sh`:**
-  - `gufw` — GUI firewall frontend that pulled in **115 packages + 106MB** (mesa/WebKit/GTK) on headless AWS
-  - `apparmor-notify` — desktop pop-up daemon pulling in **60+ X11/GTK packages**
-- **Impact:** Next run will be ~10-15 minutes faster, ~500MB less disk usage
-- **Security:** Zero impact — UFW itself stays, AppArmor itself stays
-
-### 🔴 Live Test Results (Ubuntu 24.04 EC2)
-- OS correctly detected as **Ubuntu 24.04 LTS (noble)** — not 22.04
-- Script v3.0 selected and executed correctly
-- AWS EC2 Safety Mode activated (UFW not enabled, SSH not restarted)
-- All 35+ security packages installed successfully
-- `auditd`, `aide`, `tripwire`, `clamav`, `fail2ban`, `snort`, `rkhunter` all configured
-
-### 📋 Next Steps
-- Enhance System Endpoint Hardening report with full colorful template
-- Add module-specific report templates for other 4 modules
-- User to re-run Module 3 after gufw fix and confirm faster execution time
-
-## Overview
-As of the final audit, the **SOC Pulse** project is 100% complete. The initial goal of combining 5 loosely configured security repositories into one natively automated Node+React orchestrator has been achieved.
-
-## Module Finalization
-Every single original module was thoroughly analyzed and completely rewritten/extracted to run perfectly inside an AWS Ubuntu ecosystem natively:
-1. `module-auto-remediation` ➡️ `module-ir-cve-patcher` 
-   - Rewritten to execute headlessly via awk parsing without hanging the Node backend on interactive bash prompts.
-2. `module-malware-scanner` ➡️ `module-supply-chain-defense`
-   - Configured perfectly to feed scanner JSON outputs to the frontend.
-3. `module-server-hardening` ➡️ `module-aws-hardening`
-   - Ripped out dangerous UFW/SSH overrides that originally locked the user out of EC2 machines, retaining only safe Kernel Sysctls, AuditD, and AIDE configs.
-4. `module-webapp-scanner`
-   - Converted into a natively compiling typescript module injected straight into the master backend bootloader.
-5. `module-ssl-manager` ➡️ `module-aws-ssl-manager`
-   - Erased 117KB of macOS/BSD bloat that originally crashed the scanner with "Unknown OS" errors. Replaced with pure Ubuntu IP Certbot logic.
-
-## Application Architecture
-- **No Mock Data:** The `dashboard/` React matrix connects natively to `http://${window.location.hostname}:5000`.
-- **Node Orchestrator:** The `backend/` uses `child_process.spawn()` to safely execute the local bash/sh/node scripts asynchronously.
-- **Master Startup:** The `soc-pulse-start.sh` bootloop now seamlessly ensures dependencies are installed, sub-modules are auto-compiled, and both servers spin up automatically across all subnets.
-
-*Task complete. Ecosystem is production ready.*
-
-### Post-Audit Refinements
-- **Dynamic OS Telemetry:** Modified the `module-aws-ssl-manager` bash shell to dynamically parse `/etc/os-release`, ensuring AWS logs correctly report precise kernel versions (e.g., Ubuntu 22.04 LTS vs 24.04).
-- **Scanner Nomenclature Extraction:** Deeply excised legacy "Shai-Hulud 2.0 Detector" console outputs from `module-supply-chain-defense/src/index.ts` and formally re-compiled the Typescript binary to natively report as `SOC Pulse Supply Chain Scanner`.
-
----
-
-## Session 2 — Backend Power Upgrades & Multi-Version Hardening Engine
-
-### Backend Architecture Overhaul (v2.0)
-Five major upgrades delivered to the Node.js orchestration backend:
-
-1. **Dynamic Module Registry** — `backend/config/modules.registry.js`
-   - Single source of truth for all 5 security modules with metadata (name, icon, threatLevel, cooldownSeconds)
-   - Adding a new module in future requires editing only this file — no routing code changes needed
-
-2. **Structured Logger** — `backend/services/logger.js`
-   - Zero-dependency color-coded timestamped logger with levels: INFO / START / DONE / WARN / ERROR / SYSTEM
-   - Replaces all raw `console.log` calls across the entire backend
-
-3. **Persistent Scan History Engine** — `backend/services/scanHistory.js`
-   - Every scan result (moduleId, status, duration, exit code, last 50 log lines) saved to `backend/data/scan-history.json`
-   - Circular buffer capped at 100 records — survives server restarts
-   - New API endpoints: `GET /api/modules/history` and `GET /api/modules/:id/history`
-
-4. **Per-Module Rate Limiter** — inside `backend/routes/api.js`
-   - Configurable cooldown per module (30–60 seconds) prevents accidental double-execution
-   - Returns HTTP 429 with remaining cooldown seconds if triggered
-
-5. **Health Check API** — `GET /api/health`
-   - Returns: server uptime, Node.js version, active module count, total scans recorded
-
-### GitHub Release v1.0.0
-- Tagged `v1.0.0` on GitHub with full release notes
-- Repo: `https://github.com/nextgensoumen/soc-pulse`
-
-### Multi-Version Ubuntu Hardening Engine (Module 3 Upgrade)
-- Research source: `gensecaihq/Ubuntu-Security-Hardening-Script` (cloned to `research/`)
-- All 3 production hardening scripts copied into `module-aws-hardening/`:
-  - `ubuntu-hardening-original.sh` (v2.0) → Ubuntu 18.04 / 20.04 / 22.04
-  - `ubuntu-hardening-24-04.sh` (v3.0) → Ubuntu 24.04 LTS
-  - `ubuntu-hardening-25.sh` (v4.0) → Ubuntu 25.04 / 25.10
-- `ubuntu-aws-hardening.sh` rewritten as a **smart orchestrator** (289 lines):
-  - Reads `/etc/os-release` at runtime to detect exact Ubuntu version
-  - Selects and executes the correct script automatically
-  - Pipes headless answers (`y\nweekly\nweekly\nY`) for all interactive prompts
-  - Enforces AWS EC2 Safety Mode (UFW and SSH restart are skipped)
-  - Prints a full SOC Pulse summary report on completion
-
-### Live OS Version Badge (Dashboard TopBar)
-- New API endpoint: `GET /api/system/info`
-  - Reads `/etc/os-release` and `uname -r` from the host Ubuntu server
-  - Returns: OS name, version, codename, kernel, hostname, arch, uptime
-- `TopBar.jsx` updated with a color-coded live badge:
-  - 🛡️ Blue → Ubuntu 22.04 LTS
-  - ✅ Green → Ubuntu 24.04 LTS
-  - 🚀 Purple → Ubuntu 25.x
-  - ⚡ Yellow → Ubuntu 20.04
-  - ⚠️ Red → Ubuntu 18.04 / legacy
-- Pulsing "LIVE" pill indicator refreshes every 60 seconds
-- Hover tooltip shows: Kernel version, Hostname, CPU Arch, Server Uptime
-
-### Pending (Awaiting Ubuntu Test Results)
-- User will deploy to Ubuntu 22.04 EC2 and share Module 3 CLI output logs
-- Expected: Smart orchestrator detects 22.04 → selects v2.0 script → runs full hardening
+# Backend Architecture — v2.0 (Current State)
+
+## Stack
+- Node.js + Express + Socket.io
+- Process manager: pm2
+- Entry: `backend/server.js`
+
+## Services
+| File | Role |
+|------|------|
+| `server.js` | Express + Socket.io server, process guards, HTTP logging |
+| `routes/api.js` | All REST endpoints |
+| `services/moduleRunner.js` | Child process spawner + WebSocket streamer |
+| `services/scanHistory.js` | Persistent scan history (JSON file, in-memory cache) |
+| `services/logger.js` | Structured logger (console + file: logs/backend.log) |
+| `config/modules.registry.js` | Module definitions (cmd, args, timeout, threatLevel) |
+
+## REST API Endpoints
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /api/health | Server health + uptime + memory |
+| GET | /api/stats | Platform-wide threat counts |
+| GET | /api/system/info | OS, kernel, CPU, RAM info |
+| GET | /api/modules | All modules + status + stats |
+| GET | /api/modules/active | Currently running module IDs |
+| GET | /api/modules/stats | Platform threat aggregation |
+| GET | /api/modules/history | Last N scans (all modules) |
+| GET | /api/modules/:id | Single module detail + stats |
+| GET | /api/modules/:id/history | Module-specific history |
+| GET | /api/modules/:id/stats | successRate, avgDuration, totalRuns |
+| POST | /api/modules/:id/start | Launch a module |
+| POST | /api/modules/:id/stop | Force-stop a module |
+
+## Module Timeouts (per registry)
+| Module | Timeout |
+|--------|---------|
+| 1 Supply Chain Defense | 5 min |
+| 2 Web App Scanner | 5 min |
+| 3 System Hardening | 45 min |
+| 4 CVE Remediation | 30 min |
+| 5 SSL Manager | 10 min |
+
+## WebSocket Events
+| Event | Direction | Payload |
+|-------|-----------|---------|
+| `subscribe_module` | client→server | moduleId |
+| `log_stream` | server→client | {moduleId, type, message, timestamp} |
+| `module_status_change` | server→client | {moduleId, status, isRunning, exitCode} |
+| `connected` | server→client | {ts, server} |
+
+## WebSocket Stability (cloud-hardened)
+- pingInterval: 25000ms (beats AWS ALB 60s idle timeout)
+- pingTimeout: 60000ms
+- Client: 100 reconnect attempts, 1-30s exponential backoff, polling fallback
+
+## Scan History
+- File: `backend/data/scan-history.json`
+- In-memory cache (O(1) reads)
+- Atomic writes (tmp → rename, no corruption on crash)
+- Threat verdict extracted from log output: VULNERABLE / PATCHED / CLEAN / ERROR
+- 500 records on disk, 200 in memory
+
+## Process Guards
+- uncaughtException handler (never crashes on module error)
+- unhandledRejection handler
+- Graceful SIGTERM → server.close() → process.exit(0) in 10s
+- pm2 max-restarts: 10, restart-delay: 2000ms
+
+## Security Headers (no extra deps)
+X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy
+
+## Logger
+- Console: colorized with log level
+- File: logs/backend.log (10MB rotation → backend.log.1)
+- Levels: INFO, START, DONE, WARN, ERROR, SYSTEM, REQUEST

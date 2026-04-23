@@ -1,30 +1,43 @@
-# deep-analysis: Master Orchestrator & Setup Flow
+# Setup Scripts — Current State (v2.0)
 
-## Overview
-The root execution of the SOC Pulse platform is entirely orchestrated by the `./soc-pulse-start.sh` script, which sequentially triggers three separate setup scripts located in the `setup/` directories.
+## Single Entry Point
+```bash
+./soc-pulse-start.sh   # run as root, does EVERYTHING
+```
+Sub-scripts (02/03/04) still exist but are NOT called by the master script anymore.
+Everything is inlined in `soc-pulse-start.sh` for reliability.
 
-## The Execution Pipeline
-Running `./soc-pulse-start.sh` triggers this exact flow:
+## What soc-pulse-start.sh Does (in order)
+1. `apt-get update -y -qq` — non-interactive, never hangs (DEBIAN_FRONTEND=noninteractive)
+2. Install system tools: curl wget git python3 python3-pip gcc make jq unzip
+3. Install Ansible (apt first, pip3 fallback for Ubuntu 20.04)
+4. Install Node.js v20 LTS (NodeSource → snap fallback)
+5. Install pm2 globally (`npm install -g pm2`)
+6. Build Web App Scanner TypeScript (`npm run build` in module-webapp-scanner/)
+7. `npm install` backend dependencies
+8. `npm install` dashboard dependencies
+9. Stop old pm2 instances, start `soc-pulse-backend` + `soc-pulse-dashboard`
+10. `pm2 save` + `pm2 startup` (survives VM reboot)
+11. Health check loop on localhost:5000/api/health (waits up to 10s)
+12. Print public IP + access URL
 
-### 1. `setup/01-check-prerequisites.sh`
-- **Purpose:** Verifies if the AWS Ubuntu machine actually has the absolute bare minimum software needed to compile/build everything else.
-- **Checks:** `curl`, `wget`, `git`, `python3`, `python3-pip`, `gcc`, `make`, `ansible`, `node`, `npm`.
-- **Logic:** It loops through this array. If any command is missing, it flags it as `MISSING` and throws a warning instructing you to run step 02. If all exist, it says you can jump straight to step 03.
+## Key Fixes Applied
+- `apt-get upgrade` REMOVED (was hanging 30+ min on kernel/grub prompts on cloud VMs)
+- NEEDRESTART_MODE=a + NEEDRESTART_SUSPEND=1 (suppresses service restart prompts)
+- pm2 replaces bare `npm start` — survives SSH disconnect
+- Node version check: only installs if current version < 18
+- ansible pip3 fallback for Ubuntu 20.04
 
-### 2. `setup/02-install-dependencies.sh`
-- **Purpose:** Environment bootstrapping and forced installation of missing packages.
-- **Logic:** 
-  - Runs a massive `sudo apt-get update -y` and `sudo apt-get upgrade -y` across the server.
-  - Re-loops through the same dependency array (`curl`, `wget`, `gcc`, `make`, `ansible`, etc.) and forcibly installs them quietly via `sudo apt-get install -y <pkg>`.
-  - **Special Case:** Node.js. If Node or NPM is missing, it explicitly curls the NodeSource setup script for `Node v20.x` and installs it, bypassing standard outdated Ubuntu repos.
+## pm2 Alternative (if already installed)
+```bash
+pm2 start ecosystem.config.cjs   # starts both services
+pm2 list                          # view status
+pm2 logs                          # live log stream
+pm2 restart all                   # restart both
+pm2 stop all                      # stop both
+```
 
-### 3. `setup/03-run-dashboard.sh`
-- **Purpose:** Bootstraps the React dashboard frontend.
-- **Logic:** 
-  - `cd dashboard`
-  - Runs `npm install --silent` to grab Vite and React dependencies.
-  - Launches the Vite development server globally via `npm run dev -- --host 0.0.0.0`
-  - *Note:* The `--host 0.0.0.0` flag is critical because it forces the web server to bind to every network interface, allowing the dashboard to be reachable over the internet via the AWS Public IP on port `5173`.
-
-## The Developer Loop Checkpoint
-This orchestrator setup is the bridge between the React frontend code we fixed earlier and the heavy security bash scripts we analyzed in the modules. Running this `./soc-pulse-start.sh` on the AWS instance will be our very first test to see if the environment initializes properly without errors.
+## Access After Deploy
+- Dashboard: http://<PUBLIC_IP>:5173
+- Backend:   http://<PUBLIC_IP>:5000/api/health
+- Ports 5173 + 5000 must be open in Security Group / Firewall

@@ -21,13 +21,15 @@ export const MODULE_REGISTRY = {
     2: {
         id: 2,
         name: 'Web App Scanner',
-        description: 'Hunts CVE-2025-55182 Remote Code Execution via RSC Flight protocol.',
+        description: 'Hunts CVE-2025-55182 (CVSS 10.0 RCE) in React Server Components — scans lockfiles, live URLs, Docker images, and SBOMs.',
         icon: '🌐',
         dir: 'module-webapp-scanner',
         cmd: 'node',
-        args: ['dist/cli/index.js', '../dashboard', '--json'],
+        // Scans the SOC Pulse dashboard itself for vulnerable RSC packages
+        // Additional modes available: scan-url <url>, scan-image <image>, fix --install
+        args: ['dist/cli/index.js', '../dashboard', '--json', '--no-exit-on-vuln'],
         cooldownSeconds: 30,
-        threatLevel: 'Medium',
+        threatLevel: 'Critical',
     },
     3: {
         id: 3,

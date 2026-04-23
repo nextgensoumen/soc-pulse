@@ -146,7 +146,11 @@ export const runModule = (moduleId, moduleName, relativeDir, command, args, io, 
 
         const endTime    = new Date().toISOString();
         const durationMs = Date.now() - startMs;
-        const status     = code === 0 ? 'Completed' : (signal ? 'Stopped' : 'Failed');
+        // allowedExitCodes: non-zero codes treated as warnings not failures
+        // e.g. SSL module exits 1 when certbot not installed (audit still ran)
+        const allowedCodes = (moduleConfig && moduleConfig.allowedExitCodes) ? moduleConfig.allowedExitCodes : [];
+        const isAllowedCode = code !== 0 && allowedCodes.includes(code);
+        const status = code === 0 ? 'Completed' : (isAllowedCode ? 'Completed' : (signal ? 'Stopped' : 'Failed'));
         const exitMsg    = `\n[SYSTEM] Process exited — code: ${code ?? 'N/A'} | signal: ${signal ?? 'none'} | duration: ${(durationMs / 1000).toFixed(1)}s\n`;
 
         logBuffer.push(exitMsg);

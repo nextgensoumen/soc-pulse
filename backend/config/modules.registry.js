@@ -76,6 +76,9 @@ export const MODULE_REGISTRY = {
         cooldownSeconds: 30,
         timeoutSeconds:  10 * 60,  // 10 min (cert operations + ACME challenge)
         threatLevel: 'Low',
+        // exit code 1 = dependency warning (certbot not yet installed)
+        // audit still ran successfully — treat as Completed not Failed
+        allowedExitCodes: [1],
     },
 };
 

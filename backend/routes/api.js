@@ -143,7 +143,7 @@ export const createApiRouter = (io) => {
             const result = runModule(
                 id, module.name, module.dir,
                 module.cmd, module.args,
-                io, onComplete, timeoutMs
+                io, onComplete, timeoutMs, module
             );
             res.json(result);
         } catch (error) {

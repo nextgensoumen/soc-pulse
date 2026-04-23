@@ -102,8 +102,8 @@ detect_os() {
     elif command -v rc-service &>/dev/null; then INIT_SYSTEM="openrc"
     else INIT_SYSTEM="sysv"; fi
 
-    PUBLIC_IP=$(curl -s -4 --connect-timeout 5 icanhazip.com 2>/dev/null \
-        || curl -s -4 --connect-timeout 5 ifconfig.me 2>/dev/null \
+    PUBLIC_IP=$(curl -s -4 --connect-timeout 5 --max-time 8 icanhazip.com 2>/dev/null \
+        || curl -s -4 --connect-timeout 5 --max-time 8 ifconfig.me 2>/dev/null \
         || echo "Unknown")
 }
 
@@ -244,12 +244,23 @@ section_renewal_logs() {
 section_network() {
     echo -e "\n${BOLD}━━ [6/8] Network & HTTP-01 Challenge Readiness ━━━━━━━━━━━━━━━━━${NC}"
 
-    # Connectivity to ACME staging
-    # In headless/audit mode: skip live curl check — DNS stalls indefinitely on AWS
-    # regardless of --connect-timeout or --max-time flags (DNS resolves at libc level)
+    # In headless/audit mode: skip ALL network checks — any curl or ss call
+    # can hang indefinitely on AWS due to DNS stalls or firewall drops.
+    # This is an audit of local config only — live network checks are irrelevant.
     if [[ "${HEADLESS:-false}" == "true" ]]; then
-        log INFO "ACME staging connectivity: skipped in audit mode (headless)"
-    elif curl -s --connect-timeout 5 --max-time 8 "$STAGING_ACME_URL" &>/dev/null; then
+        log INFO "ACME staging connectivity: skipped (headless audit mode)"
+        log INFO "Public IP ${PUBLIC_IP:-Unknown}: fetched at startup"
+        if ss -tlnp 2>/dev/null | grep -q ':80 '; then
+            log INFO "Port 80: listening ✓"
+        else
+            log WARN "Port 80: nothing listening — certbot standalone needs port 80"
+        fi
+        log AUDIT "AWS: ensure Security Group inbound TCP:80 from 0.0.0.0/0 for HTTP-01 challenge"
+        return 0
+    fi
+
+    # Connectivity to ACME staging (interactive mode only)
+    if curl -s --connect-timeout 5 --max-time 8 "$STAGING_ACME_URL" &>/dev/null; then
         log INFO "ACME staging connectivity: ✓ reachable"
     else
         log WARN "ACME staging connectivity: FAILED (exit code 4)"

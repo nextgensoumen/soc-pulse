@@ -100,6 +100,16 @@ Build a unified Security Operations Center (SOC) platform combining 5 specialize
 - **Root cause:** `api.js` was passing string URLs (`req.params.id`) into `moduleRunner.js`, which set String keys in `activeProcesses`. The UI polled with Integer IDs, causing `getStatus()` to falsely report `false` for actively running modules.
 - **Fix:** Converted `req.params.id` to `parseInt(req.params.id, 10)` in `api.js`.
 
+## Session 9 Fixes Applied (2026-04-24)
+### UI — Wazuh-Inspired Details Dashboards
+- **Root cause:** The static "PDF Report" feature was disconnected from the visual React experience and raw terminal logs were hard to read.
+- **Fix:** Replaced the "Report" button with a "Show Details" button that conditionally renders dedicated, Wazuh-inspired metrics dashboards for each module.
+- **State Preservation Architecture:** Instead of unmounting the dashboard grid (which would destroy the React state holding the raw terminal logs), the grid is hidden via CSS `display: none`. This ensures 100% state preservation when clicking "Back to Dashboard".
+- **Dynamic Parsers Developed:**
+  - `SupplyChainDetails.jsx` (Module 1): Plucks JSON block from generic stdout logs.
+  - `WebAppScannerDetails.jsx` (Module 2): Slices exact JSON payload boundaries from stdout.
+  - `MachineIpCryptoDetails.jsx` (Module 5): Strips ANSI `\x1B` color codes and uses Regex boundaries to map bash output into an 8-stage audit grid.
+
 ## Update Command (on existing server)
 ```bash
 cd /home/ubuntu/soc-pulse && git pull && pm2 restart all
@@ -107,4 +117,4 @@ cd /home/ubuntu/soc-pulse && git pull && pm2 restart all
 
 ## Memory Tracking
 AI continuously updates `memory/` to reflect current state.
-Last updated: 2026-04-23 (Session 8 — UI Loading Bar implemented, Status Sync crashes resolved)
+Last updated: 2026-04-24 (Session 9 — Wazuh-inspired details dashboards implemented for Modules 1, 2, 5)

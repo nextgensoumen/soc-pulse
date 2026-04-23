@@ -66,7 +66,18 @@ if [[ "$NODE_VER" -lt 18 ]]; then
     fi
 fi
 command -v node &>/dev/null || fail "Node.js not found after install"
-ok "Node.js $(node -v)  |  npm $(npm -v)"
+
+# Resolve the real node binary path (snap installs to /snap/bin — pm2 daemon
+# may not have /snap/bin in its PATH, causing silent process crash)
+NODE_BIN=$(which node 2>/dev/null || echo "/snap/bin/node")
+
+# Create /usr/local/bin/node symlink so pm2 daemon can always find it
+if [[ ! -f /usr/local/bin/node ]] || [[ "$(readlink -f /usr/local/bin/node 2>/dev/null)" != "$(readlink -f $NODE_BIN)" ]]; then
+    ln -sf "$NODE_BIN" /usr/local/bin/node 2>/dev/null || true
+    ln -sf "$(dirname $NODE_BIN)/npm" /usr/local/bin/npm 2>/dev/null || true
+    info "Symlinked node → /usr/local/bin/node"
+fi
+ok "Node.js $(node -v)  |  npm $(npm -v)  [bin: $NODE_BIN]"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # STEP 3 — pm2 (process manager — survives SSH disconnect)
@@ -121,11 +132,12 @@ pm2 delete soc-pulse-backend  2>/dev/null || true
 pm2 delete soc-pulse-dashboard 2>/dev/null || true
 
 # Start backend
-# --cwd is CRITICAL: tells pm2 to run server.js from backend/ so Node.js
-# finds backend/package.json with "type":"module" (ESM). Without this it crashes.
+# --cwd: server.js must run from backend/ to find package.json with "type":"module"
+# --interpreter: explicit node binary path so pm2 daemon finds it even via snap install
 pm2 start "$SOC_ROOT/backend/server.js" \
     --name "soc-pulse-backend" \
     --cwd  "$SOC_ROOT/backend" \
+    --interpreter "$NODE_BIN" \
     --max-restarts 10 \
     --restart-delay 2000 \
     --output "$SOC_ROOT/logs/backend-out.log" \

@@ -121,8 +121,11 @@ pm2 delete soc-pulse-backend  2>/dev/null || true
 pm2 delete soc-pulse-dashboard 2>/dev/null || true
 
 # Start backend
+# --cwd is CRITICAL: tells pm2 to run server.js from backend/ so Node.js
+# finds backend/package.json with "type":"module" (ESM). Without this it crashes.
 pm2 start "$SOC_ROOT/backend/server.js" \
     --name "soc-pulse-backend" \
+    --cwd  "$SOC_ROOT/backend" \
     --max-restarts 10 \
     --restart-delay 2000 \
     --output "$SOC_ROOT/logs/backend-out.log" \
@@ -153,13 +156,13 @@ pm2 startup 2>/dev/null | tail -1 | bash 2>/dev/null || true
 # STEP 8 — Health check
 # ═══════════════════════════════════════════════════════════════════════════════
 step "Waiting for backend to come online..."
-for i in {1..20}; do
+for i in {1..30}; do
     if curl -fsSL --max-time 1 http://localhost:5000/api/health &>/dev/null; then
-        ok "Backend health check passed!"
+        ok "Backend health check passed! (${i}s)"
         break
     fi
     sleep 1
-    [[ $i -eq 20 ]] && warn "Backend slow to start — check: pm2 logs soc-pulse-backend"
+    [[ $i -eq 30 ]] && warn "Backend slow to start — check: pm2 logs soc-pulse-backend --lines 30"
 done
 
 # ═══════════════════════════════════════════════════════════════════════════════

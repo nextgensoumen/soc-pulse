@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { openReport } from '../utils/reportGenerator';
 
-const ModuleCard = ({ id, title, description, icon, status, threatLevel, isRunning, socket, backendUrl, onStatusRefresh }) => {
+const ModuleCard = ({ id, title, description, icon, status, threatLevel, isRunning, socket, backendUrl, onStatusRefresh, onShowDetails }) => {
   const [logs, setLogs] = useState([]);
   const [showLogs, setShowLogs] = useState(false);
   const logEndRef = useRef(null);
@@ -130,10 +130,16 @@ const ModuleCard = ({ id, title, description, icon, status, threatLevel, isRunni
         {logs.length > 0 && !isRunning && (
           <button
             className="btn-report"
-            onClick={() => openReport(id, logs)}
-            title="Generate PDF security report from these logs"
+            onClick={() => onShowDetails(id, logs)}
+            title="View detailed Wazuh-style metrics for this scan"
+            style={{ 
+              background: 'linear-gradient(90deg, #6366f1, #8b5cf6)', 
+              color: 'white', 
+              border: 'none',
+              boxShadow: '0 0 10px rgba(139, 92, 246, 0.4)'
+            }}
           >
-            📊 Report
+            👁️ Show Details
           </button>
         )}
       </div>

@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import ModuleCard from './components/ModuleCard';
 import DocumentationView from './components/DocumentationView';
+import SupplyChainDetails from './components/details/SupplyChainDetails';
 
 // Dynamically connect to the backend running on the same host, port 5000
 // Resilient connection: auto-reconnect with exponential backoff (cloud-safe)
@@ -50,6 +51,7 @@ const FallingSunflowers = () => {
 
 function App() {
   const [activeView, setActiveView] = useState('dashboard');
+  const [detailsLogs, setDetailsLogs] = useState([]);
   const [modules, setModules] = useState([
     {
       id: 1,
@@ -144,6 +146,11 @@ function App() {
     };
   }, []);
 
+  const handleShowDetails = (id, logs) => {
+    setActiveView(`details-${id}`);
+    setDetailsLogs(logs);
+  };
+
   return (
     <div className="app-container">
       <FallingSunflowers />
@@ -152,34 +159,45 @@ function App() {
         {/* TopBar is OUTSIDE the scrollable area — always visible */}
         <TopBar />
         <main className="content-area">
-          {activeView === 'dashboard' ? (
-            <>
-              <div className="dashboard-header">
-                <h2>Command Center Overview</h2>
-                <p className="subtitle">Real-time status and live execution of all security modules.</p>
-              </div>
-              
-              <div className="modules-grid">
-            {modules.map(mod => (
-              <ModuleCard 
-                key={mod.id}
-                id={mod.id}
-                title={mod.title}
-                description={mod.description}
-                icon={mod.icon}
-                status={mod.status}
-                threatLevel={mod.threatLevel}
-                isRunning={mod.isRunning}
-                socket={socket}
-                backendUrl={backendUrl}
-                onStatusRefresh={fetchModuleStatuses}
-              />
-            ))}
-              </div>
-            </>
-          ) : (
+          {/* Main Dashboard - Hidden via CSS if not active to preserve ModuleCard states (logs) */}
+          <div style={{ display: activeView === 'dashboard' ? 'block' : 'none' }}>
+            <div className="dashboard-header">
+              <h2>Command Center Overview</h2>
+              <p className="subtitle">Real-time status and live execution of all security modules.</p>
+            </div>
+            
+            <div className="modules-grid">
+              {modules.map(mod => (
+                <ModuleCard 
+                  key={mod.id}
+                  id={mod.id}
+                  title={mod.title}
+                  description={mod.description}
+                  icon={mod.icon}
+                  status={mod.status}
+                  threatLevel={mod.threatLevel}
+                  isRunning={mod.isRunning}
+                  socket={socket}
+                  backendUrl={backendUrl}
+                  onStatusRefresh={fetchModuleStatuses}
+                  onShowDetails={handleShowDetails}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Docs View */}
+          {activeView.startsWith('doc-') && (
             <DocumentationView 
               moduleId={parseInt(activeView.split('-')[1])} 
+              onBack={() => setActiveView('dashboard')} 
+            />
+          )}
+
+          {/* Details Views */}
+          {activeView === 'details-1' && (
+            <SupplyChainDetails 
+              logs={detailsLogs} 
               onBack={() => setActiveView('dashboard')} 
             />
           )}

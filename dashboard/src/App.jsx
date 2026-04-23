@@ -6,8 +6,17 @@ import ModuleCard from './components/ModuleCard';
 import DocumentationView from './components/DocumentationView';
 
 // Dynamically connect to the backend running on the same host, port 5000
+// Resilient connection: auto-reconnect with exponential backoff (cloud-safe)
 const backendUrl = `http://${window.location.hostname}:5000`;
-const socket = io(backendUrl);
+const socket = io(backendUrl, {
+  reconnection: true,          // auto-reconnect on disconnect
+  reconnectionAttempts: 100,   // try up to 100 times
+  reconnectionDelay: 1000,     // start at 1 second
+  reconnectionDelayMax: 30000, // max 30 seconds between retries
+  randomizationFactor: 0.3,    // jitter to avoid thundering herd
+  timeout: 20000,              // 20s connection timeout
+  transports: ['websocket', 'polling'], // websocket first, polling fallback
+});
 
 const FallingSunflowers = () => {
   const particles = Array.from({ length: 25 }).map((_, i) => {

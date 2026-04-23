@@ -11,12 +11,18 @@ const app = express();
 const server = http.createServer(app);
 
 // Allow WebSockets and API requests from the Vite Dashboard on port 5173
-// Bind correctly to all interfaces for AWS multi-subnet deployments
+// Bind correctly to all interfaces for cloud multi-subnet deployments
 const io = new Server(server, {
     cors: {
         origin: '*',
         methods: ['GET', 'POST'],
     },
+    // Cloud keepalive: prevent load balancer idle-timeout from dropping connections
+    // AWS ALB default idle timeout = 60s. GCP = 600s. We ping every 25s.
+    pingInterval: 25000,     // send ping every 25 seconds
+    pingTimeout: 60000,      // wait 60s for pong before disconnecting
+    upgradeTimeout: 30000,   // allow 30s for websocket upgrade
+    maxHttpBufferSize: 1e6,  // 1MB max log line payload
 });
 
 app.use(cors());
@@ -144,3 +150,27 @@ function formatUptime(seconds) {
     const s = Math.floor(seconds % 60);
     return `${h}h ${m}m ${s}s`;
 }
+
+// ── PROCESS GUARDS ────────────────────────────────────────────────────────────
+// Prevent the entire backend from crashing on unhandled errors from modules.
+// pm2 will restart if it does crash, but we prefer graceful handling.
+process.on('uncaughtException', (err) => {
+    logger.error(`[UNCAUGHT EXCEPTION] ${err.message}`);
+    logger.error(err.stack || '');
+    // Do NOT process.exit() — let pm2 decide based on exit code policy
+});
+
+process.on('unhandledRejection', (reason) => {
+    logger.error(`[UNHANDLED REJECTION] ${reason}`);
+});
+
+// Graceful SIGTERM handler (pm2 sends SIGTERM before restart)
+process.on('SIGTERM', () => {
+    logger.system('Received SIGTERM — shutting down gracefully...');
+    server.close(() => {
+        logger.system('HTTP server closed.');
+        process.exit(0);
+    });
+    // Force-kill after 10s if server doesn't close
+    setTimeout(() => process.exit(0), 10000).unref();
+});

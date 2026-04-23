@@ -82,13 +82,9 @@ const ModuleCard = ({ id, title, description, icon, status, threatLevel, isRunni
       <div className="card-body">
         <p className="card-desc">{description}</p>
         
-        {threatLevel && (
-          <div className="threat-level">
-            <span className="label">Threat Level:</span>
-            <div className="threat-bar">
-              <div className={`threat-fill level-${threatLevel.toLowerCase()}`}></div>
-            </div>
-            <span className="threat-text">{threatLevel}</span>
+        {isRunning && (
+          <div className="module-loading-bar" title="Module is executing...">
+            <div className="module-loading-fill"></div>
           </div>
         )}
 

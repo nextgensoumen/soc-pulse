@@ -10,13 +10,26 @@ export const MODULE_REGISTRY = {
     1: {
         id: 1,
         name: 'Supply Chain Defense',
-        description: 'Scans NPM dependency trees against the SOC Pulse threat database.',
+        description: 'Shai-Hulud 2.0 detector: 790+ compromised npm packages, SHA256 hash matching, TruffleHog activity, malicious runner detection.',
         icon: '🛡️',
         dir: 'module-supply-chain-defense',
         cmd: 'node',
-        args: ['dist/index.js', '--working-directory=../dashboard'],
+        // --output-format=json  → structured JSON streamed to WebSocket
+        // --fail-on-critical=false → never let process.exit(1) crash the Node.js runner
+        // --scan-lockfiles=true  → scan package-lock.json (most accurate)
+        // --scan-node-modules=false → skip node_modules (too slow for dashboard scan)
+        args: [
+            'dist/index.js',
+            '--working-directory=../dashboard',
+            '--output-format=json',
+            '--fail-on-critical=false',
+            '--fail-on-high=false',
+            '--fail-on-any=false',
+            '--scan-lockfiles=true',
+            '--scan-node-modules=false',
+        ],
         cooldownSeconds: 30,
-        threatLevel: 'Low',
+        threatLevel: 'Critical',
     },
     2: {
         id: 2,

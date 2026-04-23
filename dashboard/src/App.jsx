@@ -109,7 +109,7 @@ function App() {
               return {
                 ...mod,
                 isRunning: serverStat.isRunning,
-                status: serverStat.lastStatus || (serverStat.isRunning ? 'Scanning' : mod.status),
+                status: serverStat.isRunning ? 'Scanning' : (serverStat.lastStatus !== 'Never Run' ? serverStat.lastStatus : mod.status),
               };
             }
             return mod;

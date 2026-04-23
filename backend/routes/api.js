@@ -71,7 +71,7 @@ export const createApiRouter = (io) => {
     // ── GET /api/modules/:id ───────────────────────────────────────────────────
     // Single module detail: config + live status + stats
     router.get('/:id', (req, res) => {
-        const id = req.params.id;
+        const id = parseInt(req.params.id, 10);
         const module = getModuleById(id);
         if (!module) return res.status(404).json({ success: false, message: 'Module not found.' });
 
@@ -89,7 +89,7 @@ export const createApiRouter = (io) => {
 
     // ── GET /api/modules/:id/history ──────────────────────────────────────────
     router.get('/:id/history', (req, res) => {
-        const id     = req.params.id;
+        const id     = parseInt(req.params.id, 10);
         const limit  = Math.min(parseInt(req.query.limit) || 10, 50);
         const module = getModuleById(id);
         if (!module) return res.status(404).json({ success: false, message: 'Module not found.' });
@@ -104,7 +104,7 @@ export const createApiRouter = (io) => {
 
     // ── GET /api/modules/:id/stats ────────────────────────────────────────────
     router.get('/:id/stats', (req, res) => {
-        const id = req.params.id;
+        const id = parseInt(req.params.id, 10);
         const module = getModuleById(id);
         if (!module) return res.status(404).json({ success: false, message: 'Module not found.' });
 
@@ -114,7 +114,7 @@ export const createApiRouter = (io) => {
 
     // ── POST /api/modules/:id/start ───────────────────────────────────────────
     router.post('/:id/start', (req, res) => {
-        const id     = req.params.id;
+        const id     = parseInt(req.params.id, 10);
         const module = getModuleById(id);
 
         if (!module) {
@@ -154,7 +154,7 @@ export const createApiRouter = (io) => {
 
     // ── POST /api/modules/:id/stop ────────────────────────────────────────────
     router.post('/:id/stop', (req, res) => {
-        const id = req.params.id;
+        const id = parseInt(req.params.id, 10);
         try {
             const result = stopModule(id, io);
             cooldownTracker.set(id, Date.now());

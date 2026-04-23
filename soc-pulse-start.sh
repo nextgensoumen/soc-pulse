@@ -1,74 +1,188 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-# SOC Pulse — Master Start Script v2.0
-# Cloud-hardened: any Ubuntu version, any cloud provider
-# Survives SSH disconnect via pm2
+#  SOC Pulse — One-Command Launcher
+#  Usage:  ./soc-pulse-start.sh
+#  Run as: root  (already logged in as root — no sudo needed)
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
-GREEN='\033[0;32m'; BLUE='\033[0;34m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'; BOLD='\033[1m'
+# ── Colors ────────────────────────────────────────────────────────────────────
+R='\033[0;31m'; G='\033[0;32m'; Y='\033[1;33m'
+B='\033[0;34m'; C='\033[0;36m'; W='\033[1m'; N='\033[0m'
 
-echo -e "${BLUE}${BOLD}"
-echo -e "╔══════════════════════════════════════════════════╗"
-echo -e "║   🛡️  SOC Pulse — Master Orchestrator v2.0      ║"
-echo -e "║       Cloud-hardened. Production-ready.          ║"
-echo -e "╚══════════════════════════════════════════════════╝${NC}"
-echo ""
+# ── Banner ────────────────────────────────────────────────────────────────────
+echo -e "${C}${W}"
+echo "╔══════════════════════════════════════════════════════════╗"
+echo "║    🛡️  SOC Pulse — Autonomous Security Platform          ║"
+echo "║        One-command cloud launcher                        ║"
+echo "╚══════════════════════════════════════════════════════════╝"
+echo -e "${N}"
 
-# ── Must run as root ───────────────────────────────────────────────────────────
-if [[ $EUID -ne 0 ]]; then
-    echo -e "${RED}[✗] Please run as root: sudo bash soc-pulse-start.sh${NC}"
-    exit 1
-fi
+# ── Resolve project root (where this script lives) ───────────────────────────
+SOC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+mkdir -p "$SOC_ROOT/logs"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ok()   { echo -e "  ${G}[✓]${N} $1"; }
+warn() { echo -e "  ${Y}[!]${N} $1"; }
+info() { echo -e "  ${B}[→]${N} $1"; }
+fail() { echo -e "  ${R}[✗]${N} $1"; exit 1; }
+step() { echo -e "\n${W}${B}▶ $1${N}"; }
 
-# ── Create logs dir ───────────────────────────────────────────────────────────
-mkdir -p "$SCRIPT_DIR/logs"
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 1 — System package update (non-interactive, never hangs)
+# ═══════════════════════════════════════════════════════════════════════════════
+step "Updating package lists..."
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+export NEEDRESTART_SUSPEND=1
 
-# ── Make all setup scripts executable ─────────────────────────────────────────
-chmod +x "$SCRIPT_DIR/setup/"*.sh
+apt-get update -y -qq 2>/dev/null && ok "Package lists updated"
 
-# ── PHASE 1: Check & install prerequisites ────────────────────────────────────
-echo -e "${YELLOW}${BOLD}[Phase 1/4] Checking prerequisites...${NC}"
-bash "$SCRIPT_DIR/setup/01-check-prerequisites.sh"
-
-# ── PHASE 2: Install all dependencies ─────────────────────────────────────────
-echo -e "\n${YELLOW}${BOLD}[Phase 2/4] Installing dependencies...${NC}"
-bash "$SCRIPT_DIR/setup/02-install-dependencies.sh"
-
-# ── PHASE 3: Launch backend (pm2 — background, persists after SSH exit) ───────
-echo -e "\n${YELLOW}${BOLD}[Phase 3/4] Starting backend server...${NC}"
-bash "$SCRIPT_DIR/setup/04-run-backend.sh"
-
-# Give backend 4s to bind to port 5000 before dashboard starts
-echo -e "${YELLOW}  ⏳ Waiting for backend to initialize...${NC}"
-for i in {1..8}; do
-    if curl -fsSL --max-time 1 http://localhost:5000/api/health &>/dev/null; then
-        echo -e "${GREEN}  [✓] Backend is live!${NC}"
-        break
-    fi
-    sleep 0.5
+# Core tools (skip if already installed)
+PKGS=(curl wget git python3 python3-pip gcc make jq unzip)
+MISSING=()
+for p in "${PKGS[@]}"; do
+    dpkg -s "$p" &>/dev/null || MISSING+=("$p")
 done
 
-# ── PHASE 4: Launch dashboard (pm2 — background) ──────────────────────────────
-echo -e "\n${YELLOW}${BOLD}[Phase 4/4] Starting dashboard...${NC}"
-bash "$SCRIPT_DIR/setup/03-run-dashboard.sh"
+if [[ ${#MISSING[@]} -gt 0 ]]; then
+    info "Installing: ${MISSING[*]}"
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${MISSING[@]}" 2>/dev/null || true
+fi
+ok "System tools ready"
 
-# ── FINAL STATUS ──────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 2 — Node.js v20 LTS
+# ═══════════════════════════════════════════════════════════════════════════════
+step "Checking Node.js..."
+NODE_VER=$(node -v 2>/dev/null | grep -oP '\d+' | head -1 || echo "0")
+if [[ "$NODE_VER" -lt 18 ]]; then
+    info "Installing Node.js v20 LTS..."
+    if curl -fsSL https://deb.nodesource.com/setup_20.x | bash - -q 2>/dev/null; then
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nodejs 2>/dev/null
+    else
+        warn "NodeSource failed — trying snap fallback..."
+        snap install node --classic --channel=20 2>/dev/null || fail "Node.js install failed"
+    fi
+fi
+command -v node &>/dev/null || fail "Node.js not found after install"
+ok "Node.js $(node -v)  |  npm $(npm -v)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 3 — pm2 (process manager — survives SSH disconnect)
+# ═══════════════════════════════════════════════════════════════════════════════
+step "Checking pm2..."
+if ! command -v pm2 &>/dev/null; then
+    info "Installing pm2 globally..."
+    npm install -g pm2 --quiet 2>/dev/null
+fi
+ok "pm2 $(pm2 -v 2>/dev/null)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 4 — Build Web App Scanner (TypeScript → dist/)
+# ═══════════════════════════════════════════════════════════════════════════════
+step "Building Web App Scanner..."
+SCANNER="$SOC_ROOT/module-webapp-scanner"
+cd "$SCANNER"
+if [[ ! -f "dist/cli/index.js" ]]; then
+    info "Installing scanner dependencies..."
+    npm install --silent --prefer-offline 2>/dev/null || npm install --silent
+    info "Compiling TypeScript..."
+    npm run build --silent 2>/dev/null && ok "Scanner built" || warn "Build warning — may already be compiled"
+else
+    ok "Scanner already built (dist/ exists)"
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 5 — Install backend dependencies
+# ═══════════════════════════════════════════════════════════════════════════════
+step "Installing backend dependencies..."
+cd "$SOC_ROOT/backend"
+npm install --silent --prefer-offline 2>/dev/null || npm install --silent
+ok "Backend node_modules ready"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 6 — Install dashboard dependencies
+# ═══════════════════════════════════════════════════════════════════════════════
+step "Installing dashboard dependencies..."
+cd "$SOC_ROOT/dashboard"
+npm install --silent --prefer-offline 2>/dev/null || npm install --silent
+ok "Dashboard node_modules ready"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 7 — Launch everything via pm2
+# ═══════════════════════════════════════════════════════════════════════════════
+step "Launching SOC Pulse services..."
+
+# Stop old instances gracefully
+pm2 stop soc-pulse-backend  2>/dev/null || true
+pm2 stop soc-pulse-dashboard 2>/dev/null || true
+pm2 delete soc-pulse-backend  2>/dev/null || true
+pm2 delete soc-pulse-dashboard 2>/dev/null || true
+
+# Start backend
+pm2 start "$SOC_ROOT/backend/server.js" \
+    --name "soc-pulse-backend" \
+    --max-restarts 10 \
+    --restart-delay 2000 \
+    --output "$SOC_ROOT/logs/backend-out.log" \
+    --error  "$SOC_ROOT/logs/backend-err.log" \
+    --log-date-format "YYYY-MM-DD HH:mm:ss" \
+    2>/dev/null
+ok "Backend started (pm2: soc-pulse-backend)"
+
+# Start dashboard
+pm2 start "npm run dev -- --host 0.0.0.0 --port 5173" \
+    --name "soc-pulse-dashboard" \
+    --cwd "$SOC_ROOT/dashboard" \
+    --max-restarts 10 \
+    --restart-delay 3000 \
+    --output "$SOC_ROOT/logs/dashboard-out.log" \
+    --error  "$SOC_ROOT/logs/dashboard-err.log" \
+    --log-date-format "YYYY-MM-DD HH:mm:ss" \
+    2>/dev/null
+ok "Dashboard started (pm2: soc-pulse-dashboard)"
+
+# Save pm2 state (auto-restore on reboot)
+pm2 save 2>/dev/null || true
+
+# Configure pm2 startup (survive reboot)
+pm2 startup 2>/dev/null | tail -1 | bash 2>/dev/null || true
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 8 — Health check
+# ═══════════════════════════════════════════════════════════════════════════════
+step "Waiting for backend to come online..."
+for i in {1..20}; do
+    if curl -fsSL --max-time 1 http://localhost:5000/api/health &>/dev/null; then
+        ok "Backend health check passed!"
+        break
+    fi
+    sleep 1
+    [[ $i -eq 20 ]] && warn "Backend slow to start — check: pm2 logs soc-pulse-backend"
+done
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DONE — Print access info
+# ═══════════════════════════════════════════════════════════════════════════════
+PUBLIC_IP=$(curl -fsSL --max-time 3 http://checkip.amazonaws.com 2>/dev/null \
+    || curl -fsSL --max-time 3 http://ifconfig.me 2>/dev/null \
+    || curl -fsSL --max-time 3 https://ipinfo.io/ip 2>/dev/null \
+    || echo "<YOUR-PUBLIC-IP>")
+
 echo ""
-echo -e "${GREEN}${BOLD}╔══════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}${BOLD}║   ✅  SOC Pulse is running!                      ║${NC}"
-echo -e "${GREEN}${BOLD}║                                                  ║${NC}"
-echo -e "${GREEN}${BOLD}║   Both services managed by pm2.                  ║${NC}"
-echo -e "${GREEN}${BOLD}║   Safe to close this SSH session.                ║${NC}"
-echo -e "${GREEN}${BOLD}╚══════════════════════════════════════════════════╝${NC}"
+echo -e "${G}${W}╔══════════════════════════════════════════════════════════╗"
+echo    "║   ✅  SOC Pulse is LIVE!                                 ║"
+echo    "║                                                          ║"
+printf  "║   🌐  Dashboard  →  http://%-29s║\n" "${PUBLIC_IP}:5173  "
+printf  "║   ⚙️   Backend   →  http://%-29s║\n" "${PUBLIC_IP}:5000  "
+echo    "║                                                          ║"
+echo    "║   ⚠️  Open ports 5173 + 5000 in your Security Group!     ║"
+echo    "║   ✅  Safe to close this SSH session (pm2 keeps it live) ║"
+echo -e "╚══════════════════════════════════════════════════════════╝${N}"
 echo ""
-echo -e "${BLUE}  🔧  Useful commands:${NC}"
-echo -e "${BLUE}      pm2 list                    # view all processes${NC}"
-echo -e "${BLUE}      pm2 logs                    # view live logs${NC}"
-echo -e "${BLUE}      pm2 restart all             # restart everything${NC}"
-echo -e "${BLUE}      pm2 stop all                # stop everything${NC}"
-echo -e "${BLUE}      pm2 startup && pm2 save     # survive reboots${NC}"
+echo -e "${B}  pm2 list               ${N}# see running services"
+echo -e "${B}  pm2 logs               ${N}# live log stream"
+echo -e "${B}  pm2 restart all        ${N}# restart everything"
+echo -e "${B}  pm2 stop all           ${N}# stop everything"
 echo ""
-echo -e "${BLUE}  📊  Backend health: curl http://localhost:5000/api/health${NC}"

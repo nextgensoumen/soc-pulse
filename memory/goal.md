@@ -86,6 +86,20 @@ Build a unified Security Operations Center (SOC) platform combining 5 specialize
 - `moduleRunner.js`: checks `moduleConfig.allowedExitCodes` before setting status
 - `api.js`: passes full module config object to runModule
 
+## Session 8 Fixes Applied (2026-04-23)
+### UI — Loading Bar Enhancements & Status Badges
+- **Root cause:** Static 'Threat Level' bars were irrelevant. UI needed dynamic execution feedback.
+- **Fix:** Removed static threat levels from all module cards. Replaced with an animated `scannerSweep` loading bar (`.module-loading-bar` / `.module-loading-fill`).
+- **Logic Sync:** Strictly bound the loading bar to `isRunning`. Adjusted status badge to read `Scanning...` while executing.
+
+### Backend — Status Sync Crashing (ReferenceError)
+- **Root cause:** `moduleRunner.js` threw a silent `ReferenceError` on `moduleConfig` at the exact moment a module finished, preventing `emitStatus('Completed')` and `recordScan()` from ever executing. This permanently hung the UI in a "Scanning" state.
+- **Fix:** Fixed `runModule` signature to accept the `moduleConfig` argument.
+
+### Backend — UI 'Never Run' Map Lookup Bug
+- **Root cause:** `api.js` was passing string URLs (`req.params.id`) into `moduleRunner.js`, which set String keys in `activeProcesses`. The UI polled with Integer IDs, causing `getStatus()` to falsely report `false` for actively running modules.
+- **Fix:** Converted `req.params.id` to `parseInt(req.params.id, 10)` in `api.js`.
+
 ## Update Command (on existing server)
 ```bash
 cd /home/ubuntu/soc-pulse && git pull && pm2 restart all
@@ -93,4 +107,4 @@ cd /home/ubuntu/soc-pulse && git pull && pm2 restart all
 
 ## Memory Tracking
 AI continuously updates `memory/` to reflect current state.
-Last updated: 2026-04-23 (Session 7 — All 5 modules working, SSL rewritten Node.js, UI status bug fixed)
+Last updated: 2026-04-23 (Session 8 — UI Loading Bar implemented, Status Sync crashes resolved)

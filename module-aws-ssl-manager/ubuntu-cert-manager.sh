@@ -245,7 +245,7 @@ section_network() {
     echo -e "\n${BOLD}━━ [6/8] Network & HTTP-01 Challenge Readiness ━━━━━━━━━━━━━━━━━${NC}"
 
     # Connectivity to ACME staging
-    if curl -s --connect-timeout 5 "$STAGING_ACME_URL" &>/dev/null; then
+    if curl -s --connect-timeout 5 --max-time 8 "$STAGING_ACME_URL" &>/dev/null; then
         log INFO "ACME staging connectivity: ✓ reachable"
     else
         log WARN "ACME staging connectivity: FAILED (exit code 4)"
@@ -339,7 +339,7 @@ run_integrity_check() {
     [[ "$CERTBOT_OK" == "true" ]] && log INFO "Certbot: ✓" || { log ERROR "Certbot: missing/outdated"; issues=$((issues+1)); }
 
     # Network
-    curl -s --connect-timeout 3 "$STAGING_ACME_URL" &>/dev/null && log INFO "Network/ACME: ✓" || { log WARN "Network/ACME: unreachable"; issues=$((issues+1)); }
+    curl -s --connect-timeout 3 --max-time 6 "$STAGING_ACME_URL" &>/dev/null && log INFO "Network/ACME: ✓" || { log WARN "Network/ACME: unreachable"; issues=$((issues+1)); }
 
     echo ""
     if [[ $issues -eq 0 ]]; then

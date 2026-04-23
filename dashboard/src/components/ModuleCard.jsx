@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { openReport } from '../utils/reportGenerator';
 
-const ModuleCard = ({ id, title, description, icon, status, threatLevel, isRunning, socket, backendUrl }) => {
+const ModuleCard = ({ id, title, description, icon, status, threatLevel, isRunning, socket, backendUrl, onStatusRefresh }) => {
   const [logs, setLogs] = useState([]);
   const [showLogs, setShowLogs] = useState(false);
   const logEndRef = useRef(null);
@@ -55,6 +55,13 @@ const ModuleCard = ({ id, title, description, icon, status, threatLevel, isRunni
       await fetch(`${backendUrl}/api/modules/${id}/${endpoint}`, {
         method: 'POST'
       });
+      // Force status sync — catches fast modules (e.g. SSL at 0.1s)
+      // where WebSocket events may arrive before React processes them
+      if (!isRunning && onStatusRefresh) {
+        setTimeout(onStatusRefresh, 500);
+        setTimeout(onStatusRefresh, 2000);
+        setTimeout(onStatusRefresh, 5000);
+      }
     } catch (err) {
       console.error(`Failed to ${endpoint} module ${id}:`, err);
     }

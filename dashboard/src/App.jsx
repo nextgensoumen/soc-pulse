@@ -98,8 +98,7 @@ function App() {
     }
   ]);
 
-  useEffect(() => {
-    // Fetch initial statuses from API
+  const fetchModuleStatuses = () => {
     fetch(`${backendUrl}/api/modules`)
       .then(res => res.json())
       .then(data => {
@@ -107,22 +106,27 @@ function App() {
           setModules(prev => prev.map(mod => {
             const serverStat = data.statuses.find(s => s.id === mod.id);
             if (serverStat) {
-              return { 
-                ...mod, 
+              return {
+                ...mod,
                 isRunning: serverStat.isRunning,
-                status: serverStat.isRunning ? 'Scanning' : 'Idle'
+                status: serverStat.lastStatus || (serverStat.isRunning ? 'Scanning' : mod.status),
               };
             }
             return mod;
           }));
         }
       })
-      .catch(err => console.error("Could not connect to backend API:", err));
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    // Fetch initial statuses from API
+    fetchModuleStatuses();
 
     // Listen for WebSocket status changes
     const handleStatusChange = (data) => {
-      setModules(prev => prev.map(mod => 
-        mod.id == data.moduleId 
+      setModules(prev => prev.map(mod =>
+        mod.id == data.moduleId
           ? { ...mod, isRunning: data.isRunning, status: data.status }
           : mod
       ));
@@ -130,8 +134,13 @@ function App() {
 
     socket.on('module_status_change', handleStatusChange);
 
+    // Polling fallback every 3s — catches missed WebSocket events
+    // (e.g. fast modules that complete before WebSocket flushes)
+    const pollInterval = setInterval(fetchModuleStatuses, 3000);
+
     return () => {
       socket.off('module_status_change', handleStatusChange);
+      clearInterval(pollInterval);
     };
   }, []);
 
@@ -163,6 +172,7 @@ function App() {
                 isRunning={mod.isRunning}
                 socket={socket}
                 backendUrl={backendUrl}
+                onStatusRefresh={fetchModuleStatuses}
               />
             ))}
               </div>

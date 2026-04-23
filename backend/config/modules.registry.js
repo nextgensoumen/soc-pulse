@@ -1,9 +1,10 @@
 /**
- * SOC Pulse — Dynamic Module Registry
- * =====================================
- * This is the single source of truth for all security modules.
- * To add a new module in the future, simply append a new entry here.
- * No changes to routing, runner, or frontend code are needed.
+ * SOC Pulse — Dynamic Module Registry v2.0
+ * =========================================
+ * timeoutSeconds: hard kill after this many seconds (prevents hung modules)
+ *   - Node scanners: 5 min (fast)
+ *   - Bash/system modules: 45 min (hardening can take time)
+ *   - SSL manager: 10 min
  */
 
 export const MODULE_REGISTRY = {
@@ -14,10 +15,6 @@ export const MODULE_REGISTRY = {
         icon: '🛡️',
         dir: 'module-supply-chain-defense',
         cmd: 'node',
-        // --output-format=json  → structured JSON streamed to WebSocket
-        // --fail-on-critical=false → never let process.exit(1) crash the Node.js runner
-        // --scan-lockfiles=true  → scan package-lock.json (most accurate)
-        // --scan-node-modules=false → skip node_modules (too slow for dashboard scan)
         args: [
             'dist/index.js',
             '--working-directory=../dashboard',
@@ -29,6 +26,7 @@ export const MODULE_REGISTRY = {
             '--scan-node-modules=false',
         ],
         cooldownSeconds: 30,
+        timeoutSeconds:  5 * 60,   // 5 min max (Node.js scanner is fast)
         threatLevel: 'Critical',
     },
     2: {
@@ -38,10 +36,9 @@ export const MODULE_REGISTRY = {
         icon: '🌐',
         dir: 'module-webapp-scanner',
         cmd: 'node',
-        // Scans the SOC Pulse dashboard itself for vulnerable RSC packages
-        // Additional modes available: scan-url <url>, scan-image <image>, fix --install
         args: ['dist/cli/index.js', '../dashboard', '--json', '--no-exit-on-vuln'],
         cooldownSeconds: 30,
+        timeoutSeconds:  5 * 60,   // 5 min max
         threatLevel: 'Critical',
     },
     3: {
@@ -53,6 +50,7 @@ export const MODULE_REGISTRY = {
         cmd: 'bash',
         args: ['ubuntu-aws-hardening.sh'],
         cooldownSeconds: 60,
+        timeoutSeconds:  45 * 60,  // 45 min (hardening runs many heavy tools)
         threatLevel: 'Low',
     },
     4: {
@@ -64,6 +62,7 @@ export const MODULE_REGISTRY = {
         cmd: 'bash',
         args: ['cve-aws-orchestrator.sh'],
         cooldownSeconds: 60,
+        timeoutSeconds:  30 * 60,  // 30 min (Ansible playbooks can be slow)
         threatLevel: 'High',
     },
     5: {
@@ -75,16 +74,10 @@ export const MODULE_REGISTRY = {
         cmd: 'bash',
         args: ['ubuntu-cert-manager.sh'],
         cooldownSeconds: 30,
+        timeoutSeconds:  10 * 60,  // 10 min (cert operations + ACME challenge)
         threatLevel: 'Low',
     },
 };
 
-/**
- * Helper: returns all module registry entries as an array
- */
-export const getAllModules = () => Object.values(MODULE_REGISTRY);
-
-/**
- * Helper: returns a single module config by ID
- */
-export const getModuleById = (id) => MODULE_REGISTRY[id] || null;
+export const getAllModules  = () => Object.values(MODULE_REGISTRY);
+export const getModuleById  = (id) => MODULE_REGISTRY[id] || null;

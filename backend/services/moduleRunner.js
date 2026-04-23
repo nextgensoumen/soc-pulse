@@ -71,7 +71,7 @@ const killProcess = (child, moduleId) => {
 /**
  * Execute a module script in a child process and stream logs via Socket.io.
  */
-export const runModule = (moduleId, moduleName, relativeDir, command, args, io, onComplete = null, timeoutMs = DEFAULT_TIMEOUT_MS) => {
+export const runModule = (moduleId, moduleName, relativeDir, command, args, io, onComplete = null, timeoutMs = DEFAULT_TIMEOUT_MS, moduleConfig = null) => {
     if (activeProcesses.has(moduleId)) {
         throw new Error(`Module ${moduleId} is already running.`);
     }

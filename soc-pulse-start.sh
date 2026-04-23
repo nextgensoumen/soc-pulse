@@ -1,24 +1,24 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════════
-#  SOC Pulse — One-Command Launcher
+#  SOC Pulse — One-Command Launcher v3.0
 #  Usage:  ./soc-pulse-start.sh
-#  Run as: root  (already logged in as root — no sudo needed)
+#  Run as: root (already logged in as root)
+#  Works on: Ubuntu 20.04 / 22.04 / 24.04 — AWS, GCP, Azure, DO, Hetzner
 # ═══════════════════════════════════════════════════════════════════════════════
-set -euo pipefail
 
-# ── Colors ────────────────────────────────────────────────────────────────────
+# No set -e — we handle every error explicitly so nothing silently aborts
+set -uo pipefail
+
 R='\033[0;31m'; G='\033[0;32m'; Y='\033[1;33m'
 B='\033[0;34m'; C='\033[0;36m'; W='\033[1m'; N='\033[0m'
 
-# ── Banner ────────────────────────────────────────────────────────────────────
 echo -e "${C}${W}"
 echo "╔══════════════════════════════════════════════════════════╗"
-echo "║    🛡️  SOC Pulse — Autonomous Security Platform          ║"
+echo "║    🛡️  SOC Pulse — Autonomous Security Platform v3.0     ║"
 echo "║        One-command cloud launcher                        ║"
 echo "╚══════════════════════════════════════════════════════════╝"
 echo -e "${N}"
 
-# ── Resolve project root (where this script lives) ───────────────────────────
 SOC_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 mkdir -p "$SOC_ROOT/logs"
 
@@ -29,22 +29,18 @@ fail() { echo -e "  ${R}[✗]${N} $1"; exit 1; }
 step() { echo -e "\n${W}${B}▶ $1${N}"; }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STEP 1 — System package update (non-interactive, never hangs)
+# STEP 1 — System packages (non-interactive, never hangs)
 # ═══════════════════════════════════════════════════════════════════════════════
-step "Updating package lists..."
+step "Updating system packages..."
 export DEBIAN_FRONTEND=noninteractive
 export NEEDRESTART_MODE=a
 export NEEDRESTART_SUSPEND=1
 
 apt-get update -y -qq 2>/dev/null && ok "Package lists updated"
 
-# Core tools (skip if already installed)
 PKGS=(curl wget git python3 python3-pip gcc make jq unzip)
 MISSING=()
-for p in "${PKGS[@]}"; do
-    dpkg -s "$p" &>/dev/null || MISSING+=("$p")
-done
-
+for p in "${PKGS[@]}"; do dpkg -s "$p" &>/dev/null || MISSING+=("$p"); done
 if [[ ${#MISSING[@]} -gt 0 ]]; then
     info "Installing: ${MISSING[*]}"
     DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "${MISSING[@]}" 2>/dev/null || true
@@ -53,88 +49,110 @@ ok "System tools ready"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # STEP 2 — Node.js v20 LTS
+# Strategy: download setup script to FILE first (fixes curl pipe error),
+# then run it. Snap is the fallback. Always symlink to /usr/local/bin/node.
 # ═══════════════════════════════════════════════════════════════════════════════
-step "Checking Node.js..."
-NODE_VER=$(node -v 2>/dev/null | grep -oP '\d+' | head -1 || echo "0")
-if [[ "$NODE_VER" -lt 18 ]]; then
-    info "Installing Node.js v20 LTS..."
-    if curl -fsSL https://deb.nodesource.com/setup_20.x | bash - -q 2>/dev/null; then
-        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nodejs 2>/dev/null
+step "Installing Node.js v20 LTS..."
+NODE_BIN=""
+
+# Check if usable node already exists
+CURRENT_VER=$(node -v 2>/dev/null | grep -oP '\d+' | head -1 || echo "0")
+if [[ "$CURRENT_VER" -ge 18 ]]; then
+    NODE_BIN=$(command -v node)
+    ok "Node.js already installed: $(node -v) at $NODE_BIN"
+else
+    # METHOD 1: NodeSource — download to file first (avoids curl pipe broken error)
+    info "Trying NodeSource (file download method)..."
+    if curl -fsSL https://deb.nodesource.com/setup_20.x -o /tmp/node_setup.sh 2>/dev/null; then
+        bash /tmp/node_setup.sh -q 2>/dev/null || true
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -qq nodejs 2>/dev/null || true
+        rm -f /tmp/node_setup.sh
+    fi
+
+    # Check if METHOD 1 worked
+    NODE_BIN=$(command -v node 2>/dev/null || echo "")
+    if [[ -n "$NODE_BIN" ]] && node -v &>/dev/null; then
+        ok "Node.js $(node -v) installed via NodeSource"
     else
-        warn "NodeSource failed — trying snap fallback..."
-        snap install node --classic --channel=20 2>/dev/null || fail "Node.js install failed"
+        # METHOD 2: Snap fallback
+        warn "NodeSource failed — installing via snap..."
+        snap install node --classic --channel=20 2>/dev/null || fail "Node.js install failed — no internet?"
+        NODE_BIN="/snap/bin/node"
+        ok "Node.js $(/snap/bin/node -v) installed via snap"
     fi
 fi
-command -v node &>/dev/null || fail "Node.js not found after install"
 
-# Resolve the real node binary path (snap installs to /snap/bin — pm2 daemon
-# may not have /snap/bin in its PATH, causing silent process crash)
-NODE_BIN=$(which node 2>/dev/null || echo "/snap/bin/node")
-
-# Create /usr/local/bin/node symlink so pm2 daemon can always find it
-if [[ ! -f /usr/local/bin/node ]] || [[ "$(readlink -f /usr/local/bin/node 2>/dev/null)" != "$(readlink -f $NODE_BIN)" ]]; then
-    ln -sf "$NODE_BIN" /usr/local/bin/node 2>/dev/null || true
-    ln -sf "$(dirname $NODE_BIN)/npm" /usr/local/bin/npm 2>/dev/null || true
-    info "Symlinked node → /usr/local/bin/node"
-fi
-ok "Node.js $(node -v)  |  npm $(npm -v)  [bin: $NODE_BIN]"
+# ── ALWAYS create /usr/local/bin/node symlink ─────────────────────────────────
+# This is the permanent fix for pm2 daemon not finding snap node.
+# pm2 daemon PATH includes /usr/local/bin but NOT /snap/bin.
+info "Creating /usr/local/bin/node symlink..."
+ln -sf "$NODE_BIN" /usr/local/bin/node 2>/dev/null || true
+NPM_BIN=$(dirname "$NODE_BIN")/npm
+[[ -f "$NPM_BIN" ]] && ln -sf "$NPM_BIN" /usr/local/bin/npm 2>/dev/null || true
+hash -r 2>/dev/null || true  # clear shell command cache
+ok "node → /usr/local/bin/node [bin: $NODE_BIN]"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STEP 3 — pm2 (process manager — survives SSH disconnect)
+# STEP 3 — pm2
 # ═══════════════════════════════════════════════════════════════════════════════
-step "Checking pm2..."
+step "Installing pm2..."
 if ! command -v pm2 &>/dev/null; then
-    info "Installing pm2 globally..."
-    npm install -g pm2 --quiet 2>/dev/null
+    /usr/local/bin/npm install -g pm2 --quiet 2>/dev/null || \
+    "$NODE_BIN" "$(dirname $NODE_BIN)/npm" install -g pm2 --quiet 2>/dev/null || \
+    fail "pm2 install failed"
 fi
-ok "pm2 $(pm2 -v 2>/dev/null)"
+PM2_BIN=$(command -v pm2 || echo "/usr/local/bin/pm2")
+ok "pm2 $($PM2_BIN -v 2>/dev/null) at $PM2_BIN"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STEP 4 — Build Web App Scanner (TypeScript → dist/)
+# STEP 4 — Build Web App Scanner TypeScript
 # ═══════════════════════════════════════════════════════════════════════════════
 step "Building Web App Scanner..."
-SCANNER="$SOC_ROOT/module-webapp-scanner"
-cd "$SCANNER"
+cd "$SOC_ROOT/module-webapp-scanner"
 if [[ ! -f "dist/cli/index.js" ]]; then
-    info "Installing scanner dependencies..."
-    npm install --silent --prefer-offline 2>/dev/null || npm install --silent
+    info "Installing dependencies..."
+    /usr/local/bin/npm install --silent 2>/dev/null || true
     info "Compiling TypeScript..."
-    npm run build --silent 2>/dev/null && ok "Scanner built" || warn "Build warning — may already be compiled"
+    /usr/local/bin/npm run build --silent 2>/dev/null && ok "Scanner built" || warn "Build had warnings (may still work)"
 else
-    ok "Scanner already built (dist/ exists)"
+    ok "Scanner already built (dist/ exists — skipping)"
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STEP 5 — Install backend dependencies
+# STEP 5 — Backend dependencies
 # ═══════════════════════════════════════════════════════════════════════════════
 step "Installing backend dependencies..."
 cd "$SOC_ROOT/backend"
-npm install --silent --prefer-offline 2>/dev/null || npm install --silent
+/usr/local/bin/npm install --silent 2>/dev/null || /usr/local/bin/npm install
 ok "Backend node_modules ready"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STEP 6 — Install dashboard dependencies
+# STEP 6 — Dashboard dependencies
 # ═══════════════════════════════════════════════════════════════════════════════
 step "Installing dashboard dependencies..."
 cd "$SOC_ROOT/dashboard"
-npm install --silent --prefer-offline 2>/dev/null || npm install --silent
+/usr/local/bin/npm install --silent 2>/dev/null || /usr/local/bin/npm install
 ok "Dashboard node_modules ready"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STEP 7 — Launch everything via pm2
+# STEP 7 — Kill any stale processes on ports 5000 / 5173
 # ═══════════════════════════════════════════════════════════════════════════════
-step "Launching SOC Pulse services..."
+step "Clearing ports 5000 and 5173..."
+fuser -k 5000/tcp 2>/dev/null || true
+fuser -k 5173/tcp 2>/dev/null || true
+$PM2_BIN stop all   2>/dev/null || true
+$PM2_BIN delete all 2>/dev/null || true
+sleep 1
+ok "Ports cleared"
 
-# Stop old instances gracefully
-pm2 stop soc-pulse-backend  2>/dev/null || true
-pm2 stop soc-pulse-dashboard 2>/dev/null || true
-pm2 delete soc-pulse-backend  2>/dev/null || true
-pm2 delete soc-pulse-dashboard 2>/dev/null || true
+# ═══════════════════════════════════════════════════════════════════════════════
+# STEP 8 — Launch via pm2
+# KEY: --interpreter uses the FULL PATH to node binary (no PATH lookup needed)
+# ═══════════════════════════════════════════════════════════════════════════════
+step "Launching SOC Pulse via pm2..."
 
-# Start backend
-# --cwd: server.js must run from backend/ to find package.json with "type":"module"
-# --interpreter: explicit node binary path so pm2 daemon finds it even via snap install
-pm2 start "$SOC_ROOT/backend/server.js" \
+# Backend
+$PM2_BIN start "$SOC_ROOT/backend/server.js" \
     --name "soc-pulse-backend" \
     --cwd  "$SOC_ROOT/backend" \
     --interpreter "$NODE_BIN" \
@@ -142,43 +160,51 @@ pm2 start "$SOC_ROOT/backend/server.js" \
     --restart-delay 2000 \
     --output "$SOC_ROOT/logs/backend-out.log" \
     --error  "$SOC_ROOT/logs/backend-err.log" \
-    --log-date-format "YYYY-MM-DD HH:mm:ss" \
-    2>/dev/null
-ok "Backend started (pm2: soc-pulse-backend)"
+    --log-date-format "YYYY-MM-DD HH:mm:ss"
+ok "Backend started"
 
-# Start dashboard
-pm2 start "npm run dev -- --host 0.0.0.0 --port 5173" \
+# Dashboard (npm run dev — uses bash interpreter)
+$PM2_BIN start "npm run dev -- --host 0.0.0.0 --port 5173" \
     --name "soc-pulse-dashboard" \
-    --cwd "$SOC_ROOT/dashboard" \
+    --cwd  "$SOC_ROOT/dashboard" \
     --max-restarts 10 \
     --restart-delay 3000 \
     --output "$SOC_ROOT/logs/dashboard-out.log" \
     --error  "$SOC_ROOT/logs/dashboard-err.log" \
-    --log-date-format "YYYY-MM-DD HH:mm:ss" \
-    2>/dev/null
-ok "Dashboard started (pm2: soc-pulse-dashboard)"
+    --log-date-format "YYYY-MM-DD HH:mm:ss"
+ok "Dashboard started"
 
-# Save pm2 state (auto-restore on reboot)
-pm2 save 2>/dev/null || true
-
-# Configure pm2 startup (survive reboot)
-pm2 startup 2>/dev/null | tail -1 | bash 2>/dev/null || true
+# Persist + auto-start on reboot
+$PM2_BIN save 2>/dev/null || true
+$PM2_BIN startup 2>/dev/null | grep "sudo" | bash 2>/dev/null || true
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# STEP 8 — Health check
+# STEP 9 — Health check
 # ═══════════════════════════════════════════════════════════════════════════════
-step "Waiting for backend to come online..."
+step "Waiting for backend health check..."
+BACKEND_OK=false
 for i in {1..30}; do
-    if curl -fsSL --max-time 1 http://localhost:5000/api/health &>/dev/null; then
-        ok "Backend health check passed! (${i}s)"
+    if curl -fsSL --max-time 2 http://localhost:5000/api/health &>/dev/null; then
+        ok "Backend is healthy! (took ${i}s)"
+        BACKEND_OK=true
         break
     fi
+    printf "  . "
     sleep 1
-    [[ $i -eq 30 ]] && warn "Backend slow to start — check: pm2 logs soc-pulse-backend --lines 30"
 done
+echo ""
+
+if [[ "$BACKEND_OK" = false ]]; then
+    warn "Backend didn't respond — showing logs:"
+    echo "──────────────────────────────────────"
+    tail -20 "$SOC_ROOT/logs/backend-err.log" 2>/dev/null || echo "(no error log yet)"
+    tail -20 "$SOC_ROOT/logs/backend-out.log" 2>/dev/null || echo "(no output log yet)"
+    echo "──────────────────────────────────────"
+    warn "Try: $PM2_BIN logs soc-pulse-backend --lines 30 --nostream"
+fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# DONE — Print access info
+# DONE
 # ═══════════════════════════════════════════════════════════════════════════════
 PUBLIC_IP=$(curl -fsSL --max-time 3 http://checkip.amazonaws.com 2>/dev/null \
     || curl -fsSL --max-time 3 http://ifconfig.me 2>/dev/null \
@@ -193,11 +219,10 @@ printf  "║   🌐  Dashboard  →  http://%-29s║\n" "${PUBLIC_IP}:5173  "
 printf  "║   ⚙️   Backend   →  http://%-29s║\n" "${PUBLIC_IP}:5000  "
 echo    "║                                                          ║"
 echo    "║   ⚠️  Open ports 5173 + 5000 in your Security Group!     ║"
-echo    "║   ✅  Safe to close this SSH session (pm2 keeps it live) ║"
+echo    "║   ✅  Safe to close SSH — pm2 keeps it alive             ║"
 echo -e "╚══════════════════════════════════════════════════════════╝${N}"
 echo ""
-echo -e "${B}  pm2 list               ${N}# see running services"
+echo -e "${B}  pm2 list               ${N}# view running processes"
 echo -e "${B}  pm2 logs               ${N}# live log stream"
 echo -e "${B}  pm2 restart all        ${N}# restart everything"
-echo -e "${B}  pm2 stop all           ${N}# stop everything"
 echo ""

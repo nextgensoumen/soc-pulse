@@ -5,6 +5,7 @@ import TopBar from './components/TopBar';
 import ModuleCard from './components/ModuleCard';
 import DocumentationView from './components/DocumentationView';
 import SupplyChainDetails from './components/details/SupplyChainDetails';
+import WebAppScannerDetails from './components/details/WebAppScannerDetails';
 
 // Dynamically connect to the backend running on the same host, port 5000
 // Resilient connection: auto-reconnect with exponential backoff (cloud-safe)
@@ -197,6 +198,13 @@ function App() {
           {/* Details Views */}
           {activeView === 'details-1' && (
             <SupplyChainDetails 
+              logs={detailsLogs} 
+              onBack={() => setActiveView('dashboard')} 
+            />
+          )}
+
+          {activeView === 'details-2' && (
+            <WebAppScannerDetails 
               logs={detailsLogs} 
               onBack={() => setActiveView('dashboard')} 
             />

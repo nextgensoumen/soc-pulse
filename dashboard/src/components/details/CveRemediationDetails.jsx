@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 
 const CveRemediationDetails = ({ logs, onBack }) => {
+  const [showRawLogs, setShowRawLogs] = useState(false);
   // Parse logs to extract metrics
   const parsedData = useMemo(() => {
     let rawText = '';
@@ -61,7 +62,8 @@ const CveRemediationDetails = ({ logs, onBack }) => {
       vulnerableCount: vulnerableMatch ? parseInt(vulnerableMatch[1].trim(), 10) : 0,
       duration: durationMatch ? durationMatch[1].trim() : '0s',
       
-      cveChunks
+      cveChunks,
+      cleanText
     };
   }, [logs]);
 
@@ -332,6 +334,48 @@ const CveRemediationDetails = ({ logs, onBack }) => {
           )}
         </div>
       </div>
+
+      {/* Raw Log Viewer Toggle */}
+      <div style={{ textAlign: 'center', marginTop: '30px', marginBottom: '20px' }}>
+        <button 
+          onClick={() => setShowRawLogs(!showRawLogs)}
+          style={{
+            background: 'transparent',
+            border: '1px solid #475569',
+            color: '#94a3b8',
+            padding: '6px 16px',
+            borderRadius: '20px',
+            cursor: 'pointer',
+            fontSize: '0.85rem',
+            transition: 'all 0.2s'
+          }}
+          onMouseOver={(e) => { e.currentTarget.style.color = '#f8fafc'; e.currentTarget.style.border = '1px solid #94a3b8'; }}
+          onMouseOut={(e) => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.border = '1px solid #475569'; }}
+        >
+          {showRawLogs ? 'Hide Raw Logs' : 'View Full Terminal Output (Raw Logs)'}
+        </button>
+      </div>
+
+      {showRawLogs && (
+        <div style={{
+          background: '#020617',
+          border: '1px solid #334155',
+          borderRadius: '8px',
+          padding: '20px',
+          height: '400px',
+          overflowY: 'auto',
+          fontFamily: 'monospace',
+          fontSize: '0.8rem',
+          color: '#cbd5e1',
+          lineHeight: '1.4',
+          boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.5)',
+          animation: 'fadeIn 0.3s ease-out'
+        }}>
+          <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>
+            {parsedData.cleanText}
+          </pre>
+        </div>
+      )}
       
     </div>
   );

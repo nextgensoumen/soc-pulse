@@ -70,10 +70,21 @@ const SystemHardeningDetails = ({ logs, onBack }) => {
     }
     const cleanText = rawText.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, '');
 
-    const ubuntuMatch = cleanText.match(/Ubuntu Version:\s*(.*?)(?:\s*║|$)/);
-    const scriptMatch = cleanText.match(/Script Used:\s*(.*?)(?:\s*║|$)/);
+    // Ubuntu version — try summary box first, then orchestrator header fallbacks
+    const ubuntuMatch =
+      cleanText.match(/Ubuntu Version:\s*([^\n║]+)/) ||
+      cleanText.match(/Detected Ubuntu version:\s*([0-9.]+)/) ||
+      cleanText.match(/Ubuntu Profile:\s*Ubuntu ([0-9.]+)/);
+
+    // Script version — try summary box first, then orchestrator header fallbacks
+    const scriptMatch =
+      cleanText.match(/Script Used:\s*([^\n║]+)/) ||
+      cleanText.match(/STARTING HARDENING ENGINE:\s*(v[^\n\s]+)/) ||
+      cleanText.match(/Target Profile:\s*Ubuntu ([0-9.]+)/);
+
     const durationMatch = cleanText.match(/duration:\s*([0-9.]+s)/);
-    const logFileMatch = cleanText.match(/Log File:\s*(.*?)(?:\s*║|$)/);
+    const logFileMatch = cleanText.match(/Log File:\s*([^\n║]+)/);
+
 
     // Warning detection
     const hasWarning = cleanText.includes('HARDENING FINISHED WITH WARNINGS');
@@ -141,10 +152,10 @@ const SystemHardeningDetails = ({ logs, onBack }) => {
     }
 
     return {
-      os: ubuntuMatch ? ubuntuMatch[1].trim() : 'Unknown',
-      scriptVersion: scriptMatch ? scriptMatch[1].trim() : 'Unknown',
+      os: ubuntuMatch ? ubuntuMatch[1].replace(/[║\s]+$/, '').trim() : 'Unknown',
+      scriptVersion: scriptMatch ? scriptMatch[1].replace(/[║\s]+$/, '').trim() : 'Unknown',
       duration: durationMatch ? durationMatch[1].trim() : '0s',
-      logFile: logFileMatch ? logFileMatch[1].trim() : '',
+      logFile: logFileMatch ? logFileMatch[1].replace(/[║\s]+$/, '').trim() : '',
       hasWarning,
       appliedCount,
       skippedCount,

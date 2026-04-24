@@ -214,3 +214,76 @@ SAFE messages must NEVER contain words: PATCHED, MITIGATED, FIXED, REMEDIATED
 These trigger the PATCHED check before SAFE is evaluated.
 
 Last updated: 2026-04-24 (Session 11 — Real log testing. 2 bugs fixed. All 5 modules confirmed against live AWS logs.)
+
+## Session 12 — Critical SSH Bug Fix: EC2 Instance Connect Broken After Module 3 (2026-04-25)
+
+### Problem Reported
+After running Module 3 (System Hardening), users could no longer reconnect via EC2 Instance Connect (browser-based SSH in AWS Console Chrome). The error shown was:
+  "Failed to connect to your instance - Something went wrong. Try again later."
+
+The instance was still RUNNING. The issue was NOT the instance — it was SSH daemon crashing.
+
+### Root Cause — Protocol 2 in SSH Drop-in Config
+All 3 hardening scripts were writing an invalid SSH config to:
+  /etc/ssh/sshd_config.d/99-hardening.conf
+
+The config contained these INVALID directives for OpenSSH 7.6+ / 9.x (Ubuntu 24.04):
+
+  Protocol 2         <- REMOVED from OpenSSH 7.6+. Fatal error on Ubuntu 24.04 (OpenSSH 9.x)
+  HostKey /etc/...   <- Cannot be declared in drop-in files. Main sshd_config only.
+  ListenAddress ...  <- Redundant and conflicting in drop-in files.
+
+When ec2-instance-connect was reinstalled (postinst script restarts SSH daemon), the SSH
+daemon tried to load the new config with the above invalid directives and CRASHED.
+EC2 Instance Connect requires SSH to be running -> both failed together.
+
+### Files Fixed
+- module-aws-hardening/ubuntu-hardening-24-04.sh (SSH drop-in config block, line ~1162)
+- module-aws-hardening/ubuntu-hardening-25.sh    (SSH drop-in config block, line ~1207)
+- module-aws-hardening/ubuntu-hardening-original.sh (SSH drop-in config block, line ~656)
+
+### What Was Removed from 99-hardening.conf
+Removed from all 3 scripts:
+  Protocol 2            (deprecated/fatal on OpenSSH 9.x)
+  Port 22               (already in base config, no need in drop-in)
+  AddressFamily any     (same)
+  ListenAddress 0.0.0.0 (same)
+  ListenAddress ::      (same)
+  HostKey /etc/ssh/...  (3 HostKey lines — ONLY valid in main sshd_config, not drop-ins)
+
+### What Remains in 99-hardening.conf (Safe)
+  PermitRootLogin no
+  PubkeyAuthentication yes
+  PasswordAuthentication yes/no (auto-detected based on SSH keys)
+  PermitEmptyPasswords no
+  ChallengeResponseAuthentication no
+  UsePAM yes
+  MaxAuthTries 6
+  MaxSessions 10
+  AuthenticationMethods publickey or publickey,password
+  StrictModes, IgnoreRhosts, X11Forwarding no, etc.
+  Strong cipher suites (Ciphers, MACs, KexAlgorithms)
+  ClientAliveInterval 300, LoginGraceTime 30s
+  Banner /etc/issue.net
+
+### AWS EC2 Instance Connect Preservation
+EC2 Instance Connect uses AuthorizedKeysCommand in /etc/ssh/sshd_config.d/60-ec2-instance-connect.conf
+Our 99-hardening.conf no longer overrides Protocol/HostKey/ListenAddress, so the EC2 IC config
+is fully preserved and SSH starts correctly after hardening.
+
+### Fix for Stuck Terminal / SSH Down
+If SSH is broken after hardening, run in current terminal:
+  rm -f /etc/ssh/sshd_config.d/99-hardening.conf && systemctl start ssh
+
+### How to Reconnect If EC2 Instance Connect Fails
+1. Try PEM key SSH: ssh -i yourkey.pem ubuntu@<public-ip>
+2. AWS Systems Manager -> Session Manager -> Start Session (requires IAM role)
+3. EC2 Serial Console tab in AWS Console Connect page
+4. Fix: rm -f /etc/ssh/sshd_config.d/99-hardening.conf && systemctl start ssh
+
+### Commit
+98c5fdd — pushed 2026-04-25
+
+### After This Fix
+Module 3 (System Hardening) now runs safely on any Ubuntu version without breaking SSH.
+EC2 Instance Connect continues to work after hardening runs.

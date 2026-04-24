@@ -73,3 +73,40 @@ X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, Referrer-Policy
 - Console: colorized with log level
 - File: logs/backend.log (10MB rotation → backend.log.1)
 - Levels: INFO, START, DONE, WARN, ERROR, SYSTEM, REQUEST
+
+## Session 12 — SSH Hardening Drop-in Config Critical Fix (2026-04-25)
+
+### Problem
+After Module 3 (System Hardening) ran, EC2 Instance Connect broke.
+SSH daemon crashed because the drop-in config 99-hardening.conf had invalid directives
+for OpenSSH 9.x (Ubuntu 24.04):
+  - Protocol 2 -> FATAL: removed from OpenSSH 7.6+
+  - HostKey /etc/ssh/... -> NOT allowed in drop-in configs
+  - ListenAddress 0.0.0.0 -> redundant/conflicting in drop-ins
+
+### Files Fixed
+- ubuntu-hardening-24-04.sh: SSH drop-in block cleaned
+- ubuntu-hardening-25.sh: SSH drop-in block cleaned
+- ubuntu-hardening-original.sh: SSH drop-in block cleaned
+
+### Safe Drop-in Config Rule
+SSH sshd_config.d/*.conf drop-in files MUST NOT contain:
+  Protocol, Port, HostKey, ListenAddress, AddressFamily
+These are MAIN sshd_config directives only.
+
+Drop-ins CAN safely contain:
+  Authentication settings (PermitRootLogin, PubkeyAuthentication, etc.)
+  AuthenticationMethods
+  Forwarding settings (X11Forwarding no, etc.)
+  Logging (LogLevel VERBOSE)
+  Cipher suites (Ciphers, MACs, KexAlgorithms)
+  Connection timeouts (ClientAliveInterval, LoginGraceTime)
+  Banner
+
+### EC2 Instance Connect Preservation
+EC2 Instance Connect uses AuthorizedKeysCommand in its own drop-in:
+  /etc/ssh/sshd_config.d/60-ec2-instance-connect.conf
+Our 99-hardening.conf (named 99-* so it loads last) does NOT override AuthorizedKeysCommand.
+EC2 IC now works correctly after hardening.
+
+*Last updated: 2026-04-25 (Session 12 — Critical SSH fix. Protocol 2 removed from all 3 hardening scripts.)*

@@ -109,6 +109,8 @@ Build a unified Security Operations Center (SOC) platform combining 5 specialize
   - `SupplyChainDetails.jsx` (Module 1): Plucks JSON block from generic stdout logs.
   - `WebAppScannerDetails.jsx` (Module 2): Slices exact JSON payload boundaries from stdout.
   - `MachineIpCryptoDetails.jsx` (Module 5): Strips ANSI `\x1B` color codes and uses Regex boundaries to map bash output into an 8-stage audit grid.
+  - `CveRemediationDetails.jsx` (Module 4): Uses Regex (`🔍 Scanning: CVE...`) to slice bash output into individual timeline cards for each CVE, auto-expanding on patched/vulnerable targets to show exact remediation steps.
+  - `SystemHardeningDetails.jsx` (Module 3): Filters out 500+ lines of raw `apt-get` noise to target the Summary Report box, extracting emojis (`✅`, `⛔`) to build a clean Controls Matrix. Includes a hidden "Forensic Raw Audit Viewer" toggle.
 
 ## Update Command (on existing server)
 ```bash
@@ -117,4 +119,4 @@ cd /home/ubuntu/soc-pulse && git pull && pm2 restart all
 
 ## Memory Tracking
 AI continuously updates `memory/` to reflect current state.
-Last updated: 2026-04-24 (Session 9 — Wazuh-inspired details dashboards implemented for Modules 1, 2, 5)
+Last updated: 2026-04-24 (Session 9 — Full UI/UX Transformation complete. Wazuh-inspired details dashboards implemented for all 5 modules.)

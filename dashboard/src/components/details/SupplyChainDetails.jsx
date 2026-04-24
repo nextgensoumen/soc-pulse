@@ -54,24 +54,28 @@ const SupplyChainDetails = ({ logs, onBack }) => {
       rawText = String(logs || '');
     }
 
-    // Extract JSON Report block
+    // Extract JSON Report block — search for 'JSON Report:' then find the opening '{'
+    // This handles \n, \r\n, and extra spaces between the label and the brace
     try {
-      const jsonStart = rawText.indexOf('JSON Report:\n{');
-      if (jsonStart !== -1) {
-        const startIndex = jsonStart + 13;
-        let braceCount = 0;
-        let endIndex = -1;
-        for (let i = startIndex; i < rawText.length; i++) {
-          if (rawText[i] === '{') braceCount++;
-          if (rawText[i] === '}') braceCount--;
-          if (braceCount === 0) { endIndex = i + 1; break; }
-        }
-        if (endIndex !== -1) {
-          jsonBlock = JSON.parse(rawText.substring(startIndex, endIndex));
+      const markerIdx = rawText.indexOf('JSON Report:');
+      if (markerIdx !== -1) {
+        // Find the first '{' after the marker (may be separated by whitespace/newlines)
+        const startIndex = rawText.indexOf('{', markerIdx + 12);
+        if (startIndex !== -1) {
+          let braceCount = 0;
+          let endIndex = -1;
+          for (let i = startIndex; i < rawText.length; i++) {
+            if (rawText[i] === '{') braceCount++;
+            if (rawText[i] === '}') braceCount--;
+            if (braceCount === 0) { endIndex = i + 1; break; }
+          }
+          if (endIndex !== -1) {
+            jsonBlock = JSON.parse(rawText.substring(startIndex, endIndex));
+          }
         }
       }
     } catch (e) {
-      console.error('JSON parse failed', e);
+      console.error('SupplyChain JSON parse failed:', e);
     }
 
     // Extract metadata from raw text

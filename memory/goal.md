@@ -185,3 +185,32 @@ cd /home/ubuntu/soc-pulse && git pull && pm2 restart all
 ## Memory Tracking
 AI continuously updates `memory/` to reflect current state.
 Last updated: 2026-04-24 (Session 10 — 3-section details dashboards hardened for all 5 modules. Baron Samedit CVE-2021-3156 script created and registered. Full structural audit completed. 7 CVEs now covered in Module 4.)
+
+## Session 11 — Real Log Testing & Bug Fixes (2026-04-24)
+
+### Bugs Found & Fixed
+
+#### Bug 1 — Module 1 (SupplyChainDetails.jsx) — JSON parser whitespace mismatch
+- **Symptom:** Total Scanned=0, Clean=0, Scan Time=0s, Scanned Files=empty (real values: 202, 202, 19s, 2 files)
+- **Root cause:** indexOf('JSON Report:\n{') failed — real logs have spacing/encoding between label and {
+- **Fix:** Changed to indexOf('JSON Report:') then seek to next { — handles any whitespace
+- **File:** dashboard/src/components/details/SupplyChainDetails.jsx
+
+#### Bug 2 — Module 4 (cve-2021-3156.sh) — False PATCHED detection
+- **Symptom:** Baron Samedit showed PATCHED; banner said 3 CVEs AUTO-PATCHED (should be 2)
+- **Root cause:** Script said 'ships with a patched sudo version' — the word 'patched' triggered grep -qi PATCHED, falsely marking SAFE as PATCHED
+- **Fix:** Changed to 'NOT VULNERABLE to Baron Samedit' — matches SAFE grep correctly
+- **File:** module-ir-cve-patcher/cves/cve-2021-3156.sh (lines 49, 77)
+
+### Modules Confirmed Correct (Real AWS Logs — 2026-04-24)
+- Module 1 Supply Chain: FIXED — 202 deps, 0 threats, CLEAN
+- Module 2 Web App Scanner: CORRECT — react-client-only, LOW RISK, NOT VULNERABLE
+- Module 3 System Hardening: CORRECT — 10 controls, 7/8 services running
+- Module 4 CVE Patcher: FIXED — SAFE=5, PATCHED=2 (regreSSHion+PwnKit only), 0 VULNERABLE
+- Module 5 SSL/Crypto: CORRECT — certbot not installed, 7 warnings, audit mode
+
+### Key Rule — Orchestrator grep Priority Order
+SAFE messages must NEVER contain words: PATCHED, MITIGATED, FIXED, REMEDIATED
+These trigger the PATCHED check before SAFE is evaluated.
+
+Last updated: 2026-04-24 (Session 11 — Real log testing. 2 bugs fixed. All 5 modules confirmed against live AWS logs.)

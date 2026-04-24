@@ -247,3 +247,21 @@ Every detail component follows this exact structure:
 | pm2 startup | persisted | Survives reboots |
 
 *Last updated: 2026-04-24 (Session 10 — Complete. All dashboard features documented.)*
+
+## Session 11 — Real Log Test Bug Fixes
+
+### Bug 1 — SupplyChainDetails.jsx JSON Parser
+- **Before:** awText.indexOf('JSON Report:\n{') — failed if any whitespace/encoding difference between label and {
+- **After:** awText.indexOf('JSON Report:') then awText.indexOf('{', markerIdx + 12) — robust to any spacing
+- **Impact:** Fixed Total Scanned, Clean, Scan Time, Scanned Files showing as 0/empty
+
+### Bug 2 — cve-2021-3156.sh False PATCHED
+- **Before:** Exit message said 'ships with a patched sudo version' — word 'patched' triggered grep -qi PATCHED in orchestrator
+- **After:** Message says 'NOT VULNERABLE to Baron Samedit' — matches SAFE grep cleanly
+- **Impact:** Fixed Baron Samedit showing as PATCHED (it is SAFE on Ubuntu 22.04)
+
+### Orchestrator grep Word Blacklist for SAFE Messages
+Any SAFE exit message must NOT contain: PATCHED, MITIGATED, FIXED, REMEDIATED, INFECTED
+These words trigger the PATCHED status check before SAFE is evaluated.
+
+*Last updated: 2026-04-24 (Session 11 — 2 bugs fixed from real log testing.)*

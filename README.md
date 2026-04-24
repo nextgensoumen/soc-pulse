@@ -29,6 +29,10 @@ Everything in SOC Pulse is **100% Live Data**. There is zero mock data. All scan
 > 🔬 **[View the Official Production Validation & Test Report →](./TEST_REPORT.md)**
 >
 > *Includes: Detailed cross-version Ubuntu testing, SSH lockout prevention validation, and No-Hang guarantees.*
+>
+> 🧩 **[Deep Dive: Explaining the 5 Security Modules →](./SECURITY_MODULES.md)**
+>
+> *Includes: A detailed breakdown of every module, why it's needed, how it defends the OS, and exactly what data it feeds to the Dashboard.*
 
 ---
 

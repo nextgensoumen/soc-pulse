@@ -3,9 +3,9 @@ import { io } from 'socket.io-client';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import ModuleCard from './components/ModuleCard';
-import DocumentationView from './components/DocumentationView';
 import SupplyChainDetails from './components/details/SupplyChainDetails';
 import WebAppScannerDetails from './components/details/WebAppScannerDetails';
+import SystemHardeningDetails from './components/details/SystemHardeningDetails';
 import CveRemediationDetails from './components/details/CveRemediationDetails';
 import MachineIpCryptoDetails from './components/details/MachineIpCryptoDetails';
 
@@ -207,6 +207,13 @@ function App() {
 
           {activeView === 'details-2' && (
             <WebAppScannerDetails 
+              logs={detailsLogs} 
+              onBack={() => setActiveView('dashboard')} 
+            />
+          )}
+
+          {activeView === 'details-3' && (
+            <SystemHardeningDetails 
               logs={detailsLogs} 
               onBack={() => setActiveView('dashboard')} 
             />

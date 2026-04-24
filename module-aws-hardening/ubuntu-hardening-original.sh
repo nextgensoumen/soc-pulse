@@ -653,12 +653,10 @@ harden_ssh() {
     mkdir -p /etc/ssh/sshd_config.d/
 
     # Create hardened SSH config
+    # NOTE: Do NOT include Protocol 2 - deprecated in OpenSSH 7.6+, causes SSH to fail on newer Ubuntu
     cat > /etc/ssh/sshd_config.d/99-hardening.conf << EOF
-# SSH Hardening Configuration
-Protocol 2
-Port 22
-AddressFamily inet
-ListenAddress 0.0.0.0
+# SSH Hardening Configuration -- SOC Pulse
+# SAFE for AWS EC2 Instance Connect (preserves AuthorizedKeysCommand)
 
 # Authentication
 PermitRootLogin no

@@ -1158,22 +1158,14 @@ harden_ssh() {
     fi
 
     # Create hardened SSH config using Include directive (Ubuntu 24.04 style)
+    # NOTE: Drop-in configs must NOT override Protocol, HostKey, or ListenAddress
+    # as those conflict with the base sshd_config on OpenSSH 9.x (Ubuntu 24.04)
     mkdir -p /etc/ssh/sshd_config.d/
     cat > /etc/ssh/sshd_config.d/99-hardening.conf << EOF
-# Ubuntu 24.04 SSH Hardening Configuration
-# Protocol and Network
-Protocol 2
-Port 22
-AddressFamily any
-ListenAddress 0.0.0.0
-ListenAddress ::
+# Ubuntu 24.04 SSH Hardening Configuration — SOC Pulse
+# SAFE for AWS EC2 Instance Connect (preserves AuthorizedKeysCommand)
 
-# Host Keys (Ubuntu 24.04 defaults)
-HostKey /etc/ssh/ssh_host_rsa_key
-HostKey /etc/ssh/ssh_host_ecdsa_key
-HostKey /etc/ssh/ssh_host_ed25519_key
-
-# Authentication
+# Authentication hardening
 PermitRootLogin no
 PubkeyAuthentication yes
 PasswordAuthentication ${password_auth}

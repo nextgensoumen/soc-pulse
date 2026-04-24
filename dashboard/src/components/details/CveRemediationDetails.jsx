@@ -114,13 +114,22 @@ const CveRemediationDetails = ({ logs, onBack }) => {
     const vulnerableCves = cveChunks.filter(c => c.status === 'VULNERABLE');
     const safeCves = cveChunks.filter(c => c.status === 'SAFE');
 
+    const safeCount = safeMatch ? parseInt(safeMatch[1]) : 0;
+    const patchedCount = patchedMatch ? parseInt(patchedMatch[1]) : 0;
+    const vulnerableCount = vulnerableMatch ? parseInt(vulnerableMatch[1]) : 0;
+    // totalScanned: prefer regex-parsed chunks, fall back to sum of counters
+    const totalScanned = cveChunks.length > 0
+      ? cveChunks.length
+      : safeCount + patchedCount + vulnerableCount;
+
     return {
       host: hostMatch?.[1]?.trim() || 'Unknown',
       os: osMatch?.[1]?.trim() || 'Unknown',
       kernel: kernelMatch?.[1]?.trim() || 'Unknown',
-      safeCount: safeMatch ? parseInt(safeMatch[1]) : 0,
-      patchedCount: patchedMatch ? parseInt(patchedMatch[1]) : 0,
-      vulnerableCount: vulnerableMatch ? parseInt(vulnerableMatch[1]) : 0,
+      safeCount,
+      patchedCount,
+      vulnerableCount,
+      totalScanned,
       duration: durationMatch?.[1]?.trim() || '0s',
       cveChunks, patchedCves, vulnerableCves, safeCves, cleanText,
     };
@@ -165,7 +174,7 @@ const CveRemediationDetails = ({ logs, onBack }) => {
               : `All ${parsedData.safeCount} CVEs checked — System is not affected by any scanned exploit.`}
           </h4>
           <p style={{ margin: '4px 0 0 0', color: '#94a3b8', fontSize: '0.85rem' }}>
-            {parsedData.cveChunks.length} total CVEs scanned | Duration: {parsedData.duration}
+            {parsedData.totalScanned} total CVEs scanned | Duration: {parsedData.duration}
           </p>
         </div>
       </div>
@@ -176,7 +185,7 @@ const CveRemediationDetails = ({ logs, onBack }) => {
           { label: 'Safe', value: parsedData.safeCount, color: '#10b981', desc: 'Not affected' },
           { label: 'Auto-Patched', value: parsedData.patchedCount, color: parsedData.patchedCount > 0 ? '#f59e0b' : '#64748b', desc: 'Found & fixed' },
           { label: 'Vulnerable', value: parsedData.vulnerableCount, color: parsedData.vulnerableCount > 0 ? '#ef4444' : '#64748b', desc: 'Needs action' },
-          { label: 'Total Scanned', value: parsedData.cveChunks.length, color: '#38bdf8', desc: 'CVEs checked' },
+          { label: 'Total Scanned', value: parsedData.totalScanned, color: '#38bdf8', desc: 'CVEs checked' },
           { label: 'Exec Time', value: parsedData.duration, color: '#a78bfa', desc: 'Runtime' },
         ].map((c, i) => (
           <div key={i} style={{ background: 'linear-gradient(145deg, #0f172a, #1e293b)', border: `1px solid ${c.color}`, borderRadius: '12px', padding: '16px' }}>

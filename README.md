@@ -25,6 +25,10 @@ Everything in SOC Pulse is **100% Live Data**. There is zero mock data. All scan
 > 📊 **[View the Full System Workflow & Architecture Diagrams →](./WORKFLOW.md)**
 >
 > *Includes: End-to-end data flow, module execution lifecycle, OS operation maps, directory structure, and threat coverage mindmap.*
+>
+> 🔬 **[View the Official Production Validation & Test Report →](./TEST_REPORT.md)**
+>
+> *Includes: Detailed cross-version Ubuntu testing, SSH lockout prevention validation, and No-Hang guarantees.*
 
 ---
 

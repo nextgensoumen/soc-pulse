@@ -1,61 +1,19 @@
-# 🔑 SOC Pulse — Module 5: Machine IP Cryptography Engine
+# 🔑 Module 5: Machine IP Cryptography
 
-> **Powered by [gensecaihq/LetsEncrypt-IP-SSL-Manager](https://github.com/gensecaihq/LetsEncrypt-IP-SSL-Manager) v3.0.0**
+## What is it?
+A specialized TLS/SSL compliance auditor for Let's Encrypt certificates bound directly to public AWS IPv4 addresses.
 
-Audits and manages Let's Encrypt IP address certificates on AWS EC2 instances — the first CA to support SSL for raw IP addresses (July 2025).
+## Why is it needed?
+Mismanaged SSL certificates cause massive outages and trigger browser security warnings that scare away users. Tracking certificate expiry and automatic renewal jobs on headless servers is notoriously difficult.
 
----
+## How does it work?
+It utilizes a zero-network Node.js audit script (`audit.js`) to locally parse Certbot ACME configurations. It checks 8 different cryptographic components: Certbot Installation, Status, Expiry, TLS Configuration, Auto-Renewal Jobs, HSTS, Certificate Transparency, and overall Summary.
 
-## 🌟 Key Features
+## How does it help the SOC?
+It guarantees the SOC has instant visibility into the cryptographic health of the endpoint. It prevents outages by catching broken auto-renewal cron jobs or expired certificates before users notice.
 
-| Feature | Detail |
-|---|---|
-| **Certbot Audit** | Validates v2.0.0+ with ACME profile support (required for IP certs) |
-| **6-Day Cert Tracking** | Monitors shortlived profile certificates with expiry countdowns |
-| **Renewal System Check** | Validates systemd timer + cron both configured for 4-hour renewal cadence |
-| **IP Validation** | Auto-detects public IPv4/IPv6, rejects private/reserved ranges |
-| **Port 80 Readiness** | Checks HTTP-01 ACME challenge capability |
-| **Certificate Inventory** | Lists all certs with VALID / EXPIRING / EXPIRED / CRITICAL status |
-| **AWS Safety Mode** | Read-only audit — no certificates issued or modified |
-| **SOC Pulse Headless** | `SOC_PULSE_HEADLESS=true` for non-interactive orchestrator execution |
-
----
-
-## 🚀 Usage
-
-```bash
-# Via SOC Pulse orchestrator (headless, AWS-safe)
-sudo bash ubuntu-cert-manager.sh
-
-# Issue a 6-day IP certificate (after certbot is installed)
-sudo certbot certonly --standalone \
-  --server https://acme-staging-v02.api.letsencrypt.org/directory \
-  --agree-tos --no-eff-email \
-  --preferred-profile shortlived \
-  -d YOUR_PUBLIC_IP -m your@email.com
-
-# Setup auto-renewal (every 4 hours — critical for 6-day certs)
-echo "0 */4 * * * root certbot renew --quiet" | sudo tee /etc/cron.d/certbot-ip-renew
-```
-
-## ⚠️ Important Notes
-
-- **Staging only**: IP certs are in Let's Encrypt staging (production rollout expected 2025)
-- **6-day validity**: Aggressive renewal every 4 hours is mandatory
-- **Public IPs only**: Private IPs (10.x, 192.168.x, 172.16-31.x) are not supported
-- **Port 80 required**: HTTP-01 challenge needs inbound TCP:80 in AWS Security Group
-
-## 📁 Log Locations
-
-| Log | Path |
-|---|---|
-| Main | `/var/log/letsencrypt-ip-manager/ip-certificate.log` |
-| Audit | `/var/log/letsencrypt-ip-manager/audit.log` |
-| Renewal | `/var/log/letsencrypt-ip-manager/renewal.log` |
-| Certbot | `/var/log/letsencrypt/letsencrypt.log` |
-
-## 🔗 Resources
-
-- [Let's Encrypt IP Address Certificates](https://letsencrypt.org/2025/07/01/issuing-our-first-ip-address-certificate/)
-- [ACME Profiles (shortlived)](https://letsencrypt.org/2025/01/09/acme-profiles/)
-- [Certbot Documentation](https://certbot.eff.org/)
+## What the Dashboard Shows:
+* **📊 8-Stage Audit Grid:** Breaks down the 8 configuration checks visually.
+* **✅ Passed Items:** Explains why an active certificate and proper TLS settings are crucial for data-in-transit security.
+* **🔴 Problems Found:** Highlights missing certificates, broken renewal hooks, or missing software, providing exact commands (e.g., `apt install certbot`) to fix the issues.
+* **🖥️ Raw Forensic Logs:** The complete output of the cryptographic assessment engine.

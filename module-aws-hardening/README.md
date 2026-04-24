@@ -1,24 +1,24 @@
-# 🛡️ SOC Pulse Module: AWS Server Hardening
+# 🔐 Module 3: System Endpoint Hardening
 
-## Overview
-This module represents **Endpoint Hardening** via the SOC Pulse Orchestrator. 
-The original server-hardening script was a massive, legacy utility designed to forcefully secure bare-metal servers by completely dominating their network firewalls, SSH daemons, and administrative limitations.
+## What is it?
+An autonomous Ubuntu Server OS configuration engine. It transforms a standard Ubuntu installation into a hardened, attack-resistant fortress.
 
-## The AWS Cloud Problem
-Because Amazon Web Services (AWS) explicitly uses dynamic `cloud-init` configurations and Security Groups, running the legacy script blindly on EC2 instances breaks SSH handshakes and triggers permanent lockouts.
+## Why is it needed?
+Default Linux installations prioritize convenience over security. They lack active file-tampering monitors, fail to block repeated brute-force SSH logins, and possess vulnerable kernel network settings that allow IP spoofing.
 
-## The SOC Pulse Refactor
-This script (`ubuntu-aws-hardening.sh`) is a heavily optimized, cloud-first implementation of the server hardening playbook. It preserves all the brilliant auditing mechanisms while discarding the dangerous network overwrites.
+## How does it work?
+The orchestrator auto-detects your Ubuntu version (e.g., 22.04 LTS vs 24.04 LTS) and applies specific configurations:
+* **AIDE:** Creates cryptographic hashes of core system files to detect tampering.
+* **Fail2Ban:** Bans IP addresses attempting to brute-force passwords.
+* **AuditD:** Watches for privilege escalation attempts.
+* **Sysctls:** Hardens the kernel against network flood attacks.
+* *Crucially, it is AWS-Aware:* It dynamically stages (but does not activate) UFW firewalls to prevent you from being locked out of AWS EC2 Instance Connect.
 
-### What it Enforces:
-- **Kernel Networking:** It injects deep Linux Kernel Sysctls (`/etc/sysctl.d/99-aws-security.conf`) to actively block IP spoofing, drop malicious ICMP broadcast payloads, and suppress bad SYN attacks.
-- **Intrusion Prevention (Fail2Ban):** Protects Port 22 natively by banning IP addresses that attempt brute-force dictionary attacks against your SSH daemon.
-- **Audit Logging (AuditD):** Adds kernel-level watchers (`/etc/audit/rules.d/audit.rules`) to monitor and log whenever critical identity files (`/etc/passwd`, `/etc/shadow`) are maliciously modified.
-- **Anti-Virus (ClamAV):** Sets up background malware scanning daemons.
+## How does it help the SOC?
+It provides a standardized, baseline endpoint security posture across your entire cloud fleet with zero manual configuration. The SOC knows the OS is defending itself from automated botnets.
 
-### How it Integrates with SOC Pulse
-The Express backend explicitly triggers this script via Module ID 3 when requested by the dashboard UI:
-```bash
-sudo ./ubuntu-aws-hardening.sh
-```
-All system installations and Sysctl configurations stream natively out to the browser DOM, allowing the Administrator to monitor real-time server patching securely.
+## What the Dashboard Shows:
+* **🛡️ Service Health Grid:** A live checklist showing if critical services (`auditd`, `fail2ban`, `clamav`) are actively running post-hardening.
+* **✅ Passed Items (Controls Matrix):** Explains all 10 applied configurations (e.g., "Kernel Sysctls", "SSH Daemon") in plain English and describes exactly how they block attackers.
+* **⚠️ Info / Warnings:** Explains AWS Safety Mode (why UFW is staged but not enabled) and any missing compliance packages.
+* **🖥️ Raw Forensic Logs:** The full terminal execution logs from the hardening run.

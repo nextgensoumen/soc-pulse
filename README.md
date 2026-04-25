@@ -251,9 +251,7 @@ pm2 stop all
 
 ## 🙏 Acknowledgments
 
-SOC Pulse integrates and builds upon several specialized open-source security tools. We would like to acknowledge the original repositories that served as foundational engines for this command center:
+SOC Pulse integrates and builds upon several specialized open-source security tools. We would like to acknowledge the following organizations and developers for their foundational engines that power this command center:
 
-* **[gensecaihq/Ubuntu-Security-Hardening-Script](https://github.com/gensecaihq/Ubuntu-Security-Hardening-Script):** Used as the core logic for the System Endpoint Hardening module (Module 3).
-* **[gensecaihq/Shai-Hulud-2.0-Detector](https://github.com/gensecaihq/Shai-Hulud-2.0-Detector):** Integrated into the Supply Chain Defense module for deep NPM heuristics tracking (Module 1).
-* **[gensecaihq/react2shell-scanner](https://github.com/gensecaihq/react2shell-scanner):** The foundational DAST engine for detecting React Server Components RCEs (Module 2).
-* **[alokemajumder/CVE-2024-3094-Vulnerability-Checker-Fixer](https://github.com/alokemajumder/CVE-2024-3094-Vulnerability-Checker-Fixer):** Heavily utilized within the Autonomous Remediation engine (Module 4) for tracking XZ-Backdoor and other severe vulnerabilities.
+* **[gensecaihq](https://github.com/gensecaihq):** For providing the core engines utilized in the System Endpoint Hardening, Supply Chain Defense, and Web App Scanner modules.
+* **[alokemajumder](https://github.com/alokemajumder):** For the vulnerability checking and mitigation scripts utilized within the Autonomous Remediation engine.

@@ -129,7 +129,7 @@ const DocumentationView = ({ moduleId, onBack }) => {
         <button
           onClick={onBack}
           style={{
-            background: 'linear-gradient(135deg, #FF6D00, #ff9100)',
+            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
             border: 'none',
             color: 'white',
             padding: '10px 22px',
@@ -142,14 +142,14 @@ const DocumentationView = ({ moduleId, onBack }) => {
             gap: '8px',
             fontWeight: '600',
             fontSize: '0.95rem',
-            boxShadow: '0 0 18px rgba(255, 109, 0, 0.45)',
+            boxShadow: '0 0 18px rgba(139, 92, 246, 0.45)',
             transition: 'all 0.2s',
             letterSpacing: '0.5px'
           }}
-          onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 0 28px rgba(255,109,0,0.7)'}
-          onMouseOut={(e) => e.currentTarget.style.boxShadow = '0 0 18px rgba(255,109,0,0.45)'}
+          onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 0 28px rgba(139, 92, 246, 0.75)'}
+          onMouseOut={(e) => e.currentTarget.style.boxShadow = '0 0 18px rgba(139, 92, 246, 0.45)'}
         >
-          Back to Dashboard
+          ← Back to Dashboard
         </button>
 
         {meta && (

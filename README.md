@@ -2,6 +2,7 @@
   <img src="./dashboard/public/soc-pulse-logo.png" alt="SOC Pulse Logo" width="160" />
   <h1>SOC Pulse v3.0</h1>
   <p><b>Automated Cloud Security Command Center</b></p>
+  <p><i>Architected & Developed by <a href="https://www.linkedin.com/in/soumen-bhunia/">Soumen Bhunia</a></i></p>
 </div>
 
 <div align="center">
@@ -300,3 +301,11 @@ SOC Pulse integrates and builds upon several specialized open-source security to
 
 * **[gensecaihq](https://github.com/gensecaihq):** For providing the core engines utilized in the System Endpoint Hardening, Supply Chain Defense, and Web App Scanner modules.
 * **[alokemajumder](https://github.com/alokemajumder):** For the vulnerability checking and mitigation scripts utilized within the Autonomous Remediation engine.
+
+---
+
+## 👨‍💻 Creator & Lead Developer
+
+**Soumen Bhunia**  
+The architect and primary developer behind the SOC Pulse Command Center.  
+🔗 **Connect on LinkedIn:** [linkedin.com/in/soumen-bhunia](https://www.linkedin.com/in/soumen-bhunia/)

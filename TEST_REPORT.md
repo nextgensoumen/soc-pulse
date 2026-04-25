@@ -5,10 +5,10 @@ This document outlines the rigorous testing and validation procedures conducted 
 ## 🎯 Testing Environments
 SOC Pulse was deployed and fully tested on clean, fresh AWS EC2 instances to ensure zero pre-existing configuration bias.
 
-| OS Version | Kernel Version | Cloud Provider | Instance Arch | Status |
+| OS Version | Kernel Version | Cloud Provider | Instance Type | Status |
 |---|---|---|---|---|
-| **Ubuntu 24.04.4 LTS** | `6.17.0-1007-aws` | AWS EC2 | x86_64 / arm64 | ✅ PASSED |
-| **Ubuntu 22.04.5 LTS** | `6.8.0-1046-aws` | AWS EC2 | x86_64 / arm64 | ✅ PASSED |
+| **Ubuntu 24.04.4 LTS** | `6.17.0-1007-aws` | AWS EC2 | `t2.large` (2 vCPU, 8GB RAM) | ✅ PASSED |
+| **Ubuntu 22.04.5 LTS** | `6.8.0-1046-aws` | AWS EC2 | `t2.large` (2 vCPU, 8GB RAM) | ✅ PASSED |
 
 ## 🧪 Module Validation Results
 

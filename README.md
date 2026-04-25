@@ -147,6 +147,12 @@ SOC-Pulse/
 
 SOC Pulse is designed as a "One-Command Deployment" ecosystem. It automatically handles system packages, Node.js installations, Process Managers (PM2), and compiling.
 
+### Hardware & OS Requirements
+To ensure the Node.js orchestrator and React dashboard run flawlessly during intensive security sweeps, the following baseline is required (and officially tested):
+* **Operating System:** Ubuntu 22.04 LTS or Ubuntu 24.04 LTS
+* **Minimum Instance Type:** AWS `t2.large` (2 vCPUs, 8 GB Memory) or equivalent.
+* **Storage:** Minimum 20 GB gp2/gp3 SSD (to accommodate Node modules, OS backups, and log retention).
+
 ### Prerequisite: AWS Security Group (Firewall)
 Before deploying, you **MUST** open the following inbound ports in your AWS EC2 Security Group:
 * **Port 22 (TCP):** SSH (Standard server access)

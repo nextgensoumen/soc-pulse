@@ -205,9 +205,10 @@ http://<YOUR-AWS-PUBLIC-IP>:5173
 Because SOC Pulse runs via **PM2**, the services will survive server reboots and SSH disconnects. If you push new code to GitHub, or need to debug an issue, use these exact commands.
 
 ### How to pull new code and restart (The "Update" Command)
-If the repository has been updated, run this to pull changes and restart the application seamlessly:
+If the repository has been updated, run this to pull changes and restart the application seamlessly. *(Note: We use `git checkout` first to discard any local modifications to the live scan history data, preventing git merge conflicts).*
 ```bash
 cd /home/ubuntu/soc-pulse
+git checkout backend/data/scan-history.json
 git pull
 pm2 restart all
 ```

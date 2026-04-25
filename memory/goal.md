@@ -1,7 +1,13 @@
 # SOC Pulse — Project Goals & Master Status
+**Last Updated: 2026-04-25** | **Status: PRODUCTION-READY ✅ | Documentation: COMPLETE ✅**
 
 ## Project Objective
-Build a unified Security Operations Center (SOC) platform combining 5 specialized security tools. All 5 modules are fully integrated, cloud-hardened, and production-ready.
+Build a unified Security Operations Center (SOC) platform combining 5 specialized security tools. All 5 modules are fully integrated, cloud-hardened, production-ready, and fully documented (GitHub README + in-app dashboard docs).
+
+## Tested Environment
+- **Official Production Platform:** AWS EC2 `t2.large` (2 vCPUs, 8 GB RAM)
+- **Officially Certified OS:** Ubuntu 22.04.5 LTS (`6.8.0-aws`) + Ubuntu 24.04.4 LTS (`6.17.0-aws`)
+- **GitHub Repo:** https://github.com/nextgensoumen/soc-pulse
 
 ## Environment & Execution
 - **Deployment Target:** Any Ubuntu version (20.04 / 22.04 / 24.04 / 25.04), any cloud (AWS, GCP, Azure, DigitalOcean, Hetzner)

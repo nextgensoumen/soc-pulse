@@ -306,14 +306,14 @@ SOC Pulse integrates and builds upon several specialized open-source security to
 
 <div align="center">
   <h2>⚡ Engineered by PROJECT ULTRON</h2>
-  <p><i>An advanced security development initiative</i></p>
+  <p><i>An advanced  development initiative</i></p>
   <br/>
   
   <table>
     <tr>
       <td align="center">
         <br/>
-        <b>👨‍💻 Lead Architect & Founder</b><br/><br/>
+        <b>👨‍💻 Lead Architect </b><br/><br/>
         <img src="https://img.shields.io/badge/Developer-Soumen%20Bhunia-FFd600?style=for-the-badge&labelColor=1a1a1a&logo=probot&logoColor=white" alt="Soumen Bhunia" /><br/><br/>
         <em>The primary engineer behind the SOC Pulse orchestration engine,<br/>the Glassmorphic React dashboard, and the core defense integrations.</em><br/><br/>
         <a href="https://www.linkedin.com/in/soumen-bhunia/">

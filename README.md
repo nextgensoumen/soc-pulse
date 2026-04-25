@@ -24,6 +24,31 @@ Everything in SOC Pulse is **100% Live Data**. There is zero mock data. All scan
 
 ---
 
+## 📸 SOC Pulse UI Showcase
+
+<div align="center">
+  <img src="./soc_pulse_photos/main_dashboard_view.png" alt="Main Dashboard View" />
+  <p><i>The Main Dashboard providing a high-level overview of all integrated security modules.</i></p>
+  <br/>
+  
+  <img src="./soc_pulse_photos/command_center_view.png" alt="Command Center Execution" />
+  <p><i>Live module execution and tracking directly from the Command Center.</i></p>
+  <br/>
+
+  <img src="./soc_pulse_photos/Raw_Terminal_Logs.png" alt="Live Terminal Logs" />
+  <p><i>Real-time, buffered WebSocket terminal logs streaming natively from the Ubuntu OS backend.</i></p>
+  <br/>
+
+  <img src="./soc_pulse_photos/show_details_view.png" alt="Wazuh-style Details View" />
+  <p><i>Deep-dive forensic details and vulnerability metrics parsed into actionable insights.</i></p>
+  <br/>
+
+  <img src="./soc_pulse_photos/Documentation_view.png" alt="In-App Documentation" />
+  <p><i>Fully integrated, offline documentation mapped to every security module.</i></p>
+</div>
+
+---
+
 ## ❓ Why is SOC Pulse Needed?
 
 In modern cloud environments, infrastructure is under constant, automated attack from botnets the second an IP address goes public. Traditionally, securing a server required an administrator to piecemeal dozens of disparate scripts—one script for SSL, another for kernel hardening, another to hunt for Node.js backdoors, and entirely different tools to track OS-level vulnerabilities like the XZ-Backdoor or Log4Shell. 

@@ -251,6 +251,9 @@ pm2 stop all
 
 ## 🙏 Acknowledgments
 
-This project builds upon the incredible open-source intelligence and tooling provided by the wider security community. We would specifically like to acknowledge the following GitHub repository which we integrated into this project to power our localized DAST module:
+SOC Pulse integrates and builds upon several specialized open-source security tools. We would like to acknowledge the original repositories that served as foundational engines for this command center:
 
-* **[gensecaihq/react2shell-scanner](https://github.com/gensecaihq/react2shell-scanner):** The core foundational intelligence used within Module 2 to safely and locally identify React Server Component Remote Code Execution (RCE) vulnerabilities (CVE-2025-55182).
+* **[gensecaihq/Ubuntu-Security-Hardening-Script](https://github.com/gensecaihq/Ubuntu-Security-Hardening-Script):** Used as the core logic for the System Endpoint Hardening module (Module 3).
+* **[gensecaihq/Shai-Hulud-2.0-Detector](https://github.com/gensecaihq/Shai-Hulud-2.0-Detector):** Integrated into the Supply Chain Defense module for deep NPM heuristics tracking (Module 1).
+* **[gensecaihq/react2shell-scanner](https://github.com/gensecaihq/react2shell-scanner):** The foundational DAST engine for detecting React Server Components RCEs (Module 2).
+* **[alokemajumder/CVE-2024-3094-Vulnerability-Checker-Fixer](https://github.com/alokemajumder/CVE-2024-3094-Vulnerability-Checker-Fixer):** Heavily utilized within the Autonomous Remediation engine (Module 4) for tracking XZ-Backdoor and other severe vulnerabilities.

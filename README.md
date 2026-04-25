@@ -18,9 +18,9 @@
 
 Welcome to **SOC Pulse**, a fully robust, automated, and centralized Security Operations Center (SOC) framework expressly engineered for Amazon Web Services (AWS) Ubuntu EC2 infrastructure.
 
-SOC Pulse consolidates five independent, previously disconnected security disciplines—ranging from Node.js supply-chain monitoring to deep-OS kernel hardening—into a single, highly intuitive Command Center interface. It drastically lowers the barrier to entry for securing cloud assets by giving system administrators a single pane of glass from which to trigger and monitor critical vulnerability assessments natively.
+SOC Pulse consolidates five independent, highly-specialized security disciplines—ranging from Node.js supply-chain monitoring to deep-OS kernel hardening—into a single, highly intuitive Command Center interface. It drastically lowers the barrier to entry for securing cloud assets by giving system administrators a single pane of glass from which to trigger and monitor critical vulnerability assessments natively.
 
-Everything in SOC Pulse is **100% Live Data**. There is zero mock data. All scan history, threat verdicts, module status, and system info are dynamically pulled from real-time execution outputs on your server.
+Everything in SOC Pulse is **100% Live Data**. There is zero mock data. All scan history, threat verdicts, module status, and system info are dynamically pulled from real-time execution outputs directly on your server.
 
 > 📊 **[View the Full System Workflow & Architecture Diagrams →](./WORKFLOW.md)**
 >
@@ -42,12 +42,14 @@ Unlike traditional open-source dashboards that rely on hardcoded mockup data, SO
 
 1. **The Visualization Plane (Frontend Dashboard):**
    * Constructed using **React + Vite**, styled with a futuristic, data-dense dark mode aesthetic ("Glassmorphism").
-   * Connects dynamically via WebSocket with auto-reconnection algorithms (exponential backoff) to remain highly resilient in cloud environments.
+   * **State Preservation:** Uses CSS display toggling to preserve forensic logs even when navigating between modules.
+   * **3-Section Wazuh Layout:** Intelligent React parsers dynamically extract terminal output and render it into three distinct visual blocks: 🔴 Problems Found, ✅ Passed Items, and 🖥️ Raw Forensic Logs.
+   * Connects dynamically via WebSocket with auto-reconnection algorithms (exponential backoff).
 
 2. **The Orchestration Plane (Node.js API):**
    * Features a detached **Express REST API** coupled directly with a **Socket.io WebSocket** server binding to Port 5000.
    * Leverages internal `child_process.spawn()` commands. When a user tells the dashboard to run a security sweep, the Orchestrator safely executes the corresponding local shell bash/NPM payloads. The raw `stdout/stderr` streams are instantly mirrored via Websockets back directly into UI terminal windows.
-   * Handles hard-timeouts, forced graceful shutdowns, and memory tracking to prevent long-running OS tasks from halting the server.
+   * **The "No-Hang" Guarantee:** Features hard-timeouts, strict memory buffering (caps at 2000 lines to prevent OOM errors), and headless execution (`DEBIAN_FRONTEND=noninteractive`) to ensure OS tasks never crash the dashboard.
 
 3. **The Defensive Plane (The Micro-Modules):**
    * 5 natively compiled, locally-executed security modules. We specifically stripped outer-internet dependencies from these modules to ensure your SOC is impervious to secondary supply-chain exploitation during audits.
@@ -59,31 +61,36 @@ Unlike traditional open-source dashboards that rely on hardcoded mockup data, SO
 SOC Pulse replaces generalized security "playbooks" with automated, highly-focused cloud defense modules:
 
 ### 1. 🛡️ Supply Chain Defense (`module-supply-chain-defense`)
-Designed to combat the rise of Node Package Manager (NPM) infiltration.
-* **The Intelligence:** Uses a specialized TypeScript heuristic engine (the Shai-Hulud monitor) to aggressively scan local `package.json` configurations against a database of roughly 795 known compromised packages. Unwitting developers occasionally install weaponized sub-dependencies. This checks for those, detecting malware hashes, TruffleHog abuse, and malicious runner code.
+**Threat Mitigated:** Node Package Manager (NPM) supply chain attacks, Typosquatting, and Credential Stealers.
+* **The Intelligence:** Uses the Shai-Hulud 2.0 heuristics engine to aggressively scan local `package.json` configurations against a database of roughly 790+ known compromised packages. 
+* **The Dashboard Output:** The dashboard employs a custom brace-counting parser to extract the JSON output directly from the Bash stream. It highlights compromised packages and automatically generates the exact `npm uninstall` commands required to remediate the threat.
 
 ### 2. 🌐 Web App Scanner (`module-webapp-scanner`)
-A localized DAST (Dynamic Application Security Testing) executor programmed explicitly to hunt the catastrophic **CVE-2025-55182** vulnerability.
-* **The Intelligence:** Evaluates React Server Components (RSC) and Next.js mutations. Unauthenticated hackers utilize RSC Flight protocol parsing errors to achieve Remote Code Execution (CVSS 10.0). By using a pre-compiled scan logic node, SOC Pulse validates your own web-tier interfaces without communicating with remote third-party scanners.
+**Threat Mitigated:** CVE-2025-55182 (CVSS 10.0 Remote Code Execution).
+* **The Intelligence:** A localized DAST executor that evaluates React Server Components (RSC) and Next.js topologies. It hunts for an extremely dangerous RSC Flight protocol parsing error that allows unauthenticated hackers to execute terminal commands on your server, bypassing standard network firewalls (WAFs).
+* **The Dashboard Output:** Dynamically maps out the web application's framework architecture (e.g., Client-Only vs App Router) and provides a definitive "Safe" or "Vulnerable" verdict without ever sending your proprietary code to a 3rd party API.
 
 ### 3. 🔐 System Endpoint Hardening (`module-aws-hardening`)
-A customized Ubuntu deployment playbook meant for fortifying the underlying AWS environment **without causing administrative lockouts**.
-* **The Intelligence:** Standard Linux Hardening scripts violently block AWS Security Groups via UFW, or override AWS `cloud-init` SSH daemon handshakes, permanently destroying the server connection. Our SOC logic discards TCP blocks and instead locks the OS safely via:
-  - **Kernel Sysctls:** Injecting variables to route-drop ICMP payloads and IPv4 spoof attacks.
-  - **AIDE:** Tracking critical File Integrity signatures (runs non-interactively).
-  - **Fail2Ban:** Stopping sustained brute force attacks mapping on port 22 natively.
-  - **AuditD:** Tracing specific malicious modifications to the `/etc/shadow` credential pool.
+**Threat Mitigated:** Brute-force SSH attacks, IP Spoofing, File Tampering, and Privilege Escalation.
+* **The Intelligence:** An autonomous OS configuration engine that detects your Ubuntu version (22.04 LTS or 24.04 LTS) and natively locks down the kernel. It enforces Sysctls, AIDE, Fail2Ban, and AuditD.
+* **AWS Lockout Prevention:** Standard scripts overwrite `sshd_config` with deprecated `Protocol 2` and `HostKey` directives, destroying **AWS EC2 Instance Connect** on OpenSSH 9.x. Our engine strips these out and dynamically stages UFW without enabling it, ensuring 100% SSH availability post-hardening.
+* **The Dashboard Output:** Uses an Emoji Matrix Parser to visually render a live Service Health Grid of all successfully started daemons.
 
-### 4. 🩹 Autonomous Remediation (`module-ir-cve-patcher`)
-A disaster mitigation tracker built exactly for rapid-response to severe OS backdoors and local privilege escalation vulnerabilities.
-* **The Intelligence:** Automatically detects and mitigates top-tier OS threats:
-  - **CVE-2024-6387 (regreSSHion):** Mitigates by setting `LoginGraceTime 0` securely.
-  - **CVE-2021-4034 (PwnKit):** Strips SUID bit from `pkexec` instantly.
-  - Also tracks and mitigates **Log4Shell**, **XZ-Backdoor (CVE-2024-3094)**, **Dirty Pipe**, and **Looney Tunables**. It is built to resolve the threat headlessly without throwing blocking GUI prompts on your server.
+### 4. 🩹 Autonomous CVE Remediation (`module-ir-cve-patcher`)
+**Threat Mitigated:** 7 Critical OS-level vulnerabilities (RCE & LPE).
+* **The Intelligence:** A headless rapid-response tracker that runs behavioral exploit tests natively on the machine and mitigates vulnerabilities without human intervention.
+* **Tracked CVEs:**
+  - **CVE-2024-3094 (XZ-Backdoor):** Analyzes `liblzma` and downgrades.
+  - **CVE-2024-6387 (regreSSHion):** Secures `LoginGraceTime 0`.
+  - **CVE-2021-4034 (PwnKit):** Strips SUID from `pkexec`.
+  - **CVE-2021-3156 (Baron Samedit):** Tests `sudoedit` heap overflow.
+  - **CVE-2023-4911 (Looney Tunables)** & **CVE-2022-0847 (Dirty Pipe)** & **CVE-2021-44228 (Log4Shell)**
+* **The Dashboard Output:** Separates vulnerabilities into three distinct UI categories (Vulnerable, Patched, Safe). It utilizes mathematical fallback counters to ensure the Total Scanned metric is always perfectly accurate even if Regex encounters unexpected Bash output.
 
 ### 5. 🔑 Machine IP Cryptography (`module-aws-ssl-manager`)
-A specialized compliance tracking engine addressing the Let's Encrypt "Public IP Certificate" structure roll-out.
-* **The Intelligence:** As of July 2025, AWS administrators can bind valid HTTPS certificates to raw IP addresses. Our manager generates an instant, zero-network Node.js audit of your local Certbot ACME configurations for 6-day IP-Certificate rotations. It checks dependencies, cron renewal jobs, and certificate expiry safely without stalling on cloud DNS resolution issues.
+**Threat Mitigated:** Expired Certificates, Let's Encrypt outages, Weak TLS Ciphers.
+* **The Intelligence:** As of July 2025, Let's Encrypt allows SSL certs on public AWS IPv4 addresses. However, they expire every 6 days. We completely rewrote the standard Bash auditor into a **Zero-Network Node.js engine (`audit.js`)**. It checks 8 distinct cryptographic factors locally, completely avoiding the DNS hanging issues that plague AWS EC2 VPCs.
+* **The Dashboard Output:** Strips ANSI color codes and parses the data into a stunning, interactive 8-Stage Audit Grid, providing immediate warnings for broken Cron renewal jobs.
 
 ---
 
@@ -97,7 +104,7 @@ SOC-Pulse/
 ├── /setup                      - Configuration automated installers
 ├── /module-aws-hardening       - The Endpoint OS protection toolkit
 ├── /module-aws-ssl-manager     - IP Certbot validation tools & Node.js Auditor
-├── /module-ir-cve-patcher      - Automated CVE Mitigation Scripts
+├── /module-ir-cve-patcher      - Automated 7-CVE Mitigation Scripts
 ├── /module-supply-chain-defense- Shai-Hulud malicious dependency sniffer
 ├── /module-webapp-scanner      - React2Shell remote exploitation defensive suite
 └── soc-pulse-start.sh          - The primary runtime bootloader

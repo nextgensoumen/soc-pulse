@@ -128,7 +128,26 @@ const DocumentationView = ({ moduleId, onBack }) => {
       <div className="glass-panel" style={{ padding: '30px', margin: '20px' }}>
         <button
           onClick={onBack}
-          style={{ background: 'none', border: '1px solid rgba(255,214,0,0.3)', color: '#FFd600', padding: '8px 16px', borderRadius: '20px', cursor: 'pointer', marginBottom: '20px', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}
+          style={{
+            background: 'linear-gradient(135deg, #FF6D00, #ff9100)',
+            border: 'none',
+            color: 'white',
+            padding: '10px 22px',
+            borderRadius: '25px',
+            cursor: 'pointer',
+            marginBottom: '24px',
+            fontFamily: 'inherit',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontWeight: '600',
+            fontSize: '0.95rem',
+            boxShadow: '0 0 18px rgba(255, 109, 0, 0.45)',
+            transition: 'all 0.2s',
+            letterSpacing: '0.5px'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.boxShadow = '0 0 28px rgba(255,109,0,0.7)'}
+          onMouseOut={(e) => e.currentTarget.style.boxShadow = '0 0 18px rgba(255,109,0,0.45)'}
         >
           Back to Dashboard
         </button>

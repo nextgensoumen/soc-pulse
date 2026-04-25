@@ -3,6 +3,7 @@ import { io } from 'socket.io-client';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import ModuleCard from './components/ModuleCard';
+import DocumentationView from './components/DocumentationView';
 import SupplyChainDetails from './components/details/SupplyChainDetails';
 import WebAppScannerDetails from './components/details/WebAppScannerDetails';
 import SystemHardeningDetails from './components/details/SystemHardeningDetails';

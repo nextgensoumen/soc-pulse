@@ -246,3 +246,11 @@ pm2 stop all
 
 **4. A module is stuck on "Running" indefinitely**
 * **Fix:** Click "Stop Execution" on the dashboard. If the UI is out of sync, refresh the page. The system is designed with hard-timeouts (e.g., 5 mins for Scanners) and will self-terminate hung processes automatically.
+
+---
+
+## 🙏 Acknowledgments
+
+This project builds upon the incredible open-source intelligence and tooling provided by the wider security community. We would specifically like to acknowledge the following GitHub repository which we integrated into this project to power our localized DAST module:
+
+* **[gensecaihq/react2shell-scanner](https://github.com/gensecaihq/react2shell-scanner):** The core foundational intelligence used within Module 2 to safely and locally identify React Server Component Remote Code Execution (RCE) vulnerabilities (CVE-2025-55182).

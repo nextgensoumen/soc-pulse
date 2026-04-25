@@ -279,6 +279,21 @@ pm2 stop all
 
 ---
 
+## 🤝 How to Contribute
+
+We welcome contributions from the community to help improve and expand SOC Pulse! Whether it's adding new security modules, improving the React dashboard, or fixing bugs, your help is deeply appreciated.
+
+### Steps to Contribute:
+1. **Fork the Repository:** Click the "Fork" button at the top right of this page to create your own copy of the project.
+2. **Clone your Fork:** Run `git clone https://github.com/YOUR_USERNAME/soc-pulse.git` on your local machine.
+3. **Create a Branch:** Create a new branch for your feature or bug fix (`git checkout -b feature/your-feature-name`).
+4. **Make your Changes:** Implement your code, ensuring you follow the existing style and architecture. (If adding a new module, ensure it runs headlessly without interactive prompts).
+5. **Commit your Changes:** Commit with a clear, descriptive message (`git commit -m 'feat: added new awesome module'`).
+6. **Push to your Fork:** Push the changes to your GitHub account (`git push origin feature/your-feature-name`).
+7. **Submit a Pull Request:** Go to the original SOC Pulse repository and open a Pull Request (PR) against the `main` branch. Provide a detailed description of your changes and what they fix or add.
+
+---
+
 ## 🙏 Acknowledgments
 
 SOC Pulse integrates and builds upon several specialized open-source security tools. We would like to acknowledge the following organizations and developers for their foundational engines that power this command center:

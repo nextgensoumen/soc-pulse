@@ -3,97 +3,117 @@ import React from 'react';
 const moduleDocs = {
   1: {
     title: "Supply Chain Defense",
-    icon: "🛡️",
+    icon: "📦",
     content: (
-      <>
-        <h3 style={{ color: '#FFd600', marginBottom: '1rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.5rem' }}>NPM Malware & Dependency Protection</h3>
-        <p>The <strong>Supply Chain Defense</strong> module operates specifically to intercept multi-tiered infection vectors frequently found in modern web applications. Utilizing the advanced <em>Shai-Hulud 2.1.0</em> heuristic database, it executes hyper-focused recursive scans targeted exclusively at <code>package.json</code> mapping trees and nested lockfile signatures natively on the target Ubuntu machine.</p>
+      <div className="doc-content-container">
+        <h3 style={{ color: '#FFd600', marginBottom: '0.8rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.3rem' }}>🔍 What is it?</h3>
+        <p>This module is a deep-level Node.js dependency scanner powered by the Shai-Hulud 2.0 heuristics engine. Rather than just checking for outdated packages, it performs a forensic analysis of your local <code>package.json</code> and <code>node_modules</code> tree to detect actively malicious, compromised, or typosquatted NPM packages.</p>
         
-        <h4 style={{ color: '#FF6D00', marginTop: '1.5rem', marginBottom: '0.5rem' }}>Operational Logic</h4>
+        <h3 style={{ color: '#FFd600', marginTop: '1.5rem', marginBottom: '0.8rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.3rem' }}>🛑 Why is it needed?</h3>
+        <p>Attackers frequently execute "Supply Chain Attacks" by hijacking legitimate packages or creating fake ones with similar names (typosquatting). Once installed, these poisoned packages can quietly steal <code>.env</code> secrets, install reverse-shell backdoors, or deploy resource-draining crypto-miners directly onto your production server.</p>
+
+        <h3 style={{ color: '#FFd600', marginTop: '1.5rem', marginBottom: '0.8rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.3rem' }}>🛡️ How does it help the SOC?</h3>
+        <p>It shifts security "left" into the development phase. By catching poisoned dependencies before deployment, the SOC receives an immediate, automated alert detailing the exact malicious package. This turns a potentially catastrophic data breach into a simple <code>npm uninstall</code> operation.</p>
+
+        <h3 style={{ color: '#FF6D00', marginTop: '1.5rem', marginBottom: '0.8rem' }}>🖥️ Dashboard Features: What It Actually Shows</h3>
         <ul style={{ listStyleType: 'disc', paddingLeft: '1.5rem', lineHeight: '1.8' }}>
-          <li>Scans recursively through deeply nested dependency trees utilizing un-bloated Node.js binary executables.</li>
-          <li>Correlates checksum hashes of installed modules against a hardened list of over <strong>790+ heavily compromised NPM structures</strong>.</li>
-          <li>Detects stealthy malware implants, known SHA256 malware signatures, and unauthorized code execution hooks.</li>
-          <li>Returns granular JSON outputs to the frontend DOM asynchronously to prevent blocking the React orchestrator server.</li>
+          <li><strong>🔴 Problems Found:</strong> Highlights any compromised package found, explains the specific threat, and auto-generates exact mitigation commands.</li>
+          <li><strong>✅ Passed Items:</strong> Confirms the exact number of clean packages scanned, and displays Threat DB Stats (active database version and the 790+ signatures checked).</li>
+          <li><strong>🖥️ Raw Forensic Logs:</strong> A collapsible toggle revealing the complete JSON output from the execution engine for deep analysis.</li>
         </ul>
-        <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: 'rgba(255, 214, 0, 0.1)', borderRadius: '8px', borderLeft: '4px solid #FFd600' }}>
-          <p style={{ margin: 0 }}><strong>Security Note:</strong> This module runs exclusively via localized payload execution rather than performing dangerous remote <code>npx</code> downloads, ensuring zero external supply chain manipulation during the scan lifecycle.</p>
-        </div>
-      </>
+      </div>
     )
   },
   2: {
     title: "Web App Scanner",
     icon: "🌐",
     content: (
-      <>
-        <h3 style={{ color: '#FFd600', marginBottom: '1rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.5rem' }}>DAST Penetration Testing (CVE-2025-55182)</h3>
-        <p>The <strong>Web App Scanner</strong> acts as a proactive, localized penetration testing protocol specifically compiled in native TypeScript. It aggressively interrogates React Server Components (RSC) Flight protocol payloads hunting for the lethal Remote Code Execution vulnerability currently tracked under <em>CVE-2025-55182</em> (CVSS Score: 10.0).</p>
+      <div className="doc-content-container">
+        <h3 style={{ color: '#FFd600', marginBottom: '0.8rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.3rem' }}>🔍 What is it?</h3>
+        <p>This module is a localized Dynamic Application Security Testing (DAST) suite specifically built to hunt for <strong>CVE-2025-55182</strong>—a catastrophic Remote Code Execution (RCE) vulnerability found in React Server Components.</p>
         
-        <h4 style={{ color: '#FF6D00', marginTop: '1.5rem', marginBottom: '0.5rem' }}>Vulnerability Mechanics</h4>
-        <p>Because the React Flight protocol parser does not inherently sanitize malicious string evaluation before hydrating components, an unauthenticated attacker can achieve reverse-shell execution directly into your Next.js/React server instance bypassing standard Web Application Firewalls.</p>
-        
-        <ul style={{ listStyleType: 'disc', paddingLeft: '1.5rem', lineHeight: '1.8', marginTop: '1rem' }}>
-          <li>The module is stripped of generic remote-execution dependencies, compiling natively into <code>dist/cli/index.js</code> during setup via SOC Pulse.</li>
-          <li>Safely emulates RSC manipulation across <code>0.0.0.0</code> bindings, delivering simulated payloads without causing application downtime or exposing the server to outside networks.</li>
+        <h3 style={{ color: '#FFd600', marginTop: '1.5rem', marginBottom: '0.8rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.3rem' }}>🛑 Why is it needed?</h3>
+        <p>Unauthenticated attackers can exploit improperly configured React Server Components to execute arbitrary terminal commands directly on your Node.js server. Because this is a framework-level flaw, traditional network firewalls and Web Application Firewalls (WAFs) cannot easily block it.</p>
+
+        <h3 style={{ color: '#FFd600', marginTop: '1.5rem', marginBottom: '0.8rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.3rem' }}>🛡️ How does it help the SOC?</h3>
+        <p>It gives the SOC absolute visibility into the application layer. Rather than guessing if a web app is vulnerable, the SOC gets a definitive "Vulnerable" or "Safe" verdict based on local framework topology analysis, preventing reliance on external penetration testers.</p>
+
+        <h3 style={{ color: '#FF6D00', marginTop: '1.5rem', marginBottom: '0.8rem' }}>🖥️ Dashboard Features: What It Actually Shows</h3>
+        <ul style={{ listStyleType: 'disc', paddingLeft: '1.5rem', lineHeight: '1.8' }}>
+          <li><strong>🔴 Problems Found:</strong> If vulnerable, it lists the exact Next.js projects at risk and provides auto-generated mitigation flags.</li>
+          <li><strong>✅ Passed Items:</strong> Provides a CVE Knowledge Card explaining the exploit, and maps exactly why the server passed (e.g., "No Server Components active").</li>
+          <li><strong>🖥️ Raw Forensic Logs:</strong> Reveals the exact JSON and stdout streams from the binary execution.</li>
         </ul>
-      </>
+      </div>
     )
   },
   3: {
     title: "System Endpoint Hardening",
     icon: "🔐",
     content: (
-      <>
-        <h3 style={{ color: '#FFd600', marginBottom: '1rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.5rem' }}>Cloud-Safe Kernel Stabilization</h3>
-        <p>The <strong>System Endpoint Hardening</strong> script represents a massive restructuring of standard Linux fortification tools. Traditional DISA-STIG compliance scripts violently alter the <code>sshd_config</code> and UFW Firewalls, which routinely causes catastrophic loss of communication on AWS/Cloud instances by severing underlying Cloud-Init key handshakes.</p>
+      <div className="doc-content-container">
+        <h3 style={{ color: '#FFd600', marginBottom: '0.8rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.3rem' }}>🔍 What is it?</h3>
+        <p>An autonomous Ubuntu Server OS configuration engine. It runs locally to transform a standard, vulnerable Ubuntu installation into a hardened, attack-resistant fortress by actively modifying kernel parameters and locking down SSH configurations.</p>
         
-        <h4 style={{ color: '#FF6D00', marginTop: '1.5rem', marginBottom: '0.5rem' }}>Hardening Adjustments</h4>
-        <p style={{ marginBottom: '1rem' }}>SOC Pulse avoids UFW network-lockouts entirely and instead secures the machine using native, headless operational tools:</p>
+        <h3 style={{ color: '#FFd600', marginTop: '1.5rem', marginBottom: '0.8rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.3rem' }}>🛑 Why is it needed?</h3>
+        <p>Default Linux installations lack active file-tampering monitors, fail to block repeated brute-force SSH logins, and possess vulnerable kernel network settings that allow IP spoofing. If a server is exposed to the public internet, it will be brute-forced within minutes.</p>
+
+        <h3 style={{ color: '#FFd600', marginTop: '1.5rem', marginBottom: '0.8rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.3rem' }}>🛡️ How does it help the SOC?</h3>
+        <p>It provides a standardized, baseline endpoint security posture across your entire cloud fleet with zero manual configuration. The SOC knows definitively that the OS is actively defending itself via Fail2Ban, AIDE, and AuditD.</p>
+
+        <h3 style={{ color: '#FF6D00', marginTop: '1.5rem', marginBottom: '0.8rem' }}>🖥️ Dashboard Features: What It Actually Shows</h3>
         <ul style={{ listStyleType: 'disc', paddingLeft: '1.5rem', lineHeight: '1.8' }}>
-          <li><strong>Sysctls Protection:</strong> Injects safe network routing configurations directly into the kernel to inherently drop ICMP attack payloads and completely mitigate IPv4 spoofing layers.</li>
-          <li><strong>AIDE System:</strong> Calculates and tracks real-time integrity hashes for critical files arrayed across the core OS. Configured to run completely headless without blocking terminal input.</li>
-          <li><strong>Fail2Ban Analytics:</strong> Seamlessly limits brute-force dictionary attacks mapping onto localized port 22 natively without severing standard root AWS access tokens.</li>
-          <li><strong>AuditD Deployment:</strong> Deeply logs kernel modifications and traces explicit edits made maliciously against the <code>/etc/shadow</code> credential pool.</li>
+          <li><strong>🔴 Problems Found:</strong> Highlights missing compliance packages (like OpenSCAP) and displays an AWS Safety Banner explaining why UFW was intentionally bypassed to prevent lockouts.</li>
+          <li><strong>✅ Passed Items:</strong> Features a live Service Health Grid showing if critical services successfully started, and explains all applied configurations (like Kernel Sysctls) in plain English.</li>
+          <li><strong>🖥️ Raw Forensic Logs:</strong> Reveals the full terminal execution logs from the entire hardening run, allowing administrators to audit the exact apt commands executed.</li>
         </ul>
-      </>
+      </div>
     )
   },
   4: {
-    title: "Autonomous Remediation",
+    title: "Autonomous CVE Remediation",
     icon: "🩹",
     content: (
-      <>
-        <h3 style={{ color: '#FFd600', marginBottom: '1rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.5rem' }}>Headless Vulnerability Patching</h3>
-        <p>The <strong>Autonomous Remediation</strong> engine is a custom, non-interactive suite of Bash scripts mapped directly to mitigating the most critical Local Privilege Escalation (LPE) and Remote Code Execution (RCE) vulnerabilities in modern Linux architecture.</p>
+      <div className="doc-content-container">
+        <h3 style={{ color: '#FFd600', marginBottom: '0.8rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.3rem' }}>🔍 What is it?</h3>
+        <p>This module is a rapid-response incident remediation tracker and patcher. It scans the operating system for 7 top-tier vulnerabilities (including XZ-Backdoor, regreSSHion, PwnKit, and Baron Samedit) and actively patches them without human intervention.</p>
         
-        <h4 style={{ color: '#FF6D00', marginTop: '1.5rem', marginBottom: '0.5rem' }}>Silent Execution & Live Mitigation</h4>
-        <p>Older server configuration scripts rely on interactive prompts that cause backend orchestration nodes to hang indefinitely. This module bypasses interactive evaluations completely. It currently autonomously detects and mitigates:</p>
-        
-        <ul style={{ listStyleType: 'disc', paddingLeft: '1.5rem', lineHeight: '1.8', marginTop: '1rem' }}>
-          <li><strong>CVE-2024-6387 (regreSSHion):</strong> A severe flaw in OpenSSH's server. SOC Pulse mitigates this silently by forcing <code>LoginGraceTime 0</code> in the SSH daemon configuration and restarting it safely.</li>
-          <li><strong>CVE-2021-4034 (PwnKit):</strong> A memory corruption flaw in PolicyKit. SOC Pulse instantly isolates the threat by dynamically stripping the SUID execution bit from the <code>pkexec</code> binary.</li>
-          <li><strong>CVE-2024-3094 (XZ-Utils Backdoor):</strong> Analyzes loaded <code>liblzma</code> libraries via explicit <code>awk</code> parsing to detect malicious backdoor artifacts injected by rogue maintainers.</li>
+        <h3 style={{ color: '#FFd600', marginTop: '1.5rem', marginBottom: '0.8rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.3rem' }}>🛑 Why is it needed?</h3>
+        <p>When a massive OS-level vulnerability drops, system administrators often lack the time to manually SSH into hundreds of servers to test and apply mitigations. A delay of even a few hours can result in a compromised fleet.</p>
+
+        <h3 style={{ color: '#FFd600', marginTop: '1.5rem', marginBottom: '0.8rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.3rem' }}>🛡️ How does it help the SOC?</h3>
+        <p>It turns the SOC from a passive monitoring station into an active defense mechanism. Threat remediation happens natively on the machine in minutes, automatically closing the window of exposure.</p>
+
+        <h3 style={{ color: '#FF6D00', marginTop: '1.5rem', marginBottom: '0.8rem' }}>🖥️ Dashboard Features: What It Actually Shows</h3>
+        <ul style={{ listStyleType: 'disc', paddingLeft: '1.5rem', lineHeight: '1.8' }}>
+          <li><strong>🔴 Vulnerable (Action Required):</strong> If a CVE couldn't be auto-patched, it provides manual commands to secure the system.</li>
+          <li><strong>🟢 Patched (Auto-Mitigated):</strong> Shows the exact terminal commands the system ran autonomously to secure the vulnerability, providing full audit transparency.</li>
+          <li><strong>✅ Safe (Not Vulnerable):</strong> Displays the safe version detected on the server alongside a plain-English explanation of the CVE, plus a toggle for raw behavioral exploit testing logs.</li>
         </ul>
-      </>
+      </div>
     )
   },
   5: {
     title: "Machine IP Cryptography",
     icon: "🔑",
     content: (
-      <>
-        <h3 style={{ color: '#FFd600', marginBottom: '1rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.5rem' }}>Zero-Network ACME Auditing</h3>
-        <p>The <strong>Machine IP Cryptography</strong> environment dictates secure ACME synchronization purely built for Let's Encrypt's rollout of "Public IP Certificates". Now, bare AWS IP addresses support valid HTTPS connections, but at the cost of extreme 6-day certificate expiration cycles.</p>
+      <div className="doc-content-container">
+        <h3 style={{ color: '#FFd600', marginBottom: '0.8rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.3rem' }}>🔍 What is it?</h3>
+        <p>A specialized TLS/SSL compliance auditor specifically engineered for Let's Encrypt certificates bound directly to public AWS IPv4 addresses. It utilizes a zero-network Node.js audit script to parse Certbot ACME configurations locally.</p>
         
-        <h4 style={{ color: '#FF6D00', marginTop: '1.5rem', marginBottom: '0.5rem' }}>The Node.js Engine Rewrite</h4>
-        <p>Legacy Bash-based SSL scripts are known to hang indefinitely on AWS EC2 instances due to VPC DNS resolution stalls when attempting to curl external ACME staging servers. SOC Pulse explicitly prevents this by utilizing a custom-built, ultra-fast <strong>Node.js engine (audit.js)</strong>.</p>
-        <ul style={{ listStyleType: 'disc', paddingLeft: '1.5rem', lineHeight: '1.8', marginTop: '1rem' }}>
-          <li><strong>Instant Execution:</strong> Operates natively using <code>execSync</code> to verify Certbot configurations, completing an exhaustive 8-step system audit in under <strong>0.1 seconds</strong>.</li>
-          <li><strong>Zero Network Calls:</strong> Eliminates hanging network connectivity tests completely. All audits check local filesystem configurations and dependencies only.</li>
-          <li><strong>Renewal Auditing:</strong> Scans the underlying <code>systemd</code> timers and <code>/etc/cron.d/</code> directories to ensure 4-hour automatic rotation mechanisms are configured properly.</li>
+        <h3 style={{ color: '#FFd600', marginTop: '1.5rem', marginBottom: '0.8rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.3rem' }}>🛑 Why is it needed?</h3>
+        <p>Mismanaged SSL certificates cause massive service outages and trigger browser security warnings that scare away users. Tracking certificate expiry, ensuring strong TLS cipher configurations, and verifying automatic renewal cron jobs on headless servers is notoriously difficult.</p>
+
+        <h3 style={{ color: '#FFd600', marginTop: '1.5rem', marginBottom: '0.8rem', borderBottom: '1px solid rgba(255, 214, 0, 0.2)', paddingBottom: '0.3rem' }}>🛡️ How does it help the SOC?</h3>
+        <p>It guarantees the SOC has instant, daily visibility into the cryptographic health of the endpoint. It prevents embarrassing outages by catching broken auto-renewal cron jobs, weak TLS settings, or expiring certificates before users notice a problem.</p>
+
+        <h3 style={{ color: '#FF6D00', marginTop: '1.5rem', marginBottom: '0.8rem' }}>🖥️ Dashboard Features: What It Actually Shows</h3>
+        <ul style={{ listStyleType: 'disc', paddingLeft: '1.5rem', lineHeight: '1.8' }}>
+          <li><strong>🔴 Problems Found:</strong> Highlights missing certificates, broken renewal hooks, or missing software, and provides exact, numbered commands to fix the issues immediately.</li>
+          <li><strong>✅ Passed Items:</strong> Visually breaks down the 8 configuration checks via an interactive Audit Grid, explaining why an active certificate is crucial.</li>
+          <li><strong>🖥️ Raw Forensic Logs:</strong> A collapsible toggle revealing the complete output of the cryptographic assessment engine for compliance auditing.</li>
         </ul>
-      </>
+      </div>
     )
   }
 };

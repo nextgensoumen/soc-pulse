@@ -149,16 +149,22 @@ SOC Pulse is designed as a "One-Command Deployment" ecosystem. It automatically 
 
 ### Hardware & OS Requirements
 To ensure the Node.js orchestrator and React dashboard run flawlessly during intensive security sweeps, the following baseline is required (and officially tested):
-* **Operating System:** Ubuntu 22.04 LTS or Ubuntu 24.04 LTS
-* **Minimum Instance Type:** AWS `t2.large` (2 vCPUs, 8 GB Memory) or equivalent.
-* **Storage:** Minimum 20 GB gp2/gp3 SSD (to accommodate Node modules, OS backups, and log retention).
+
+| Requirement | Specification | Justification |
+|---|---|---|
+| **Operating System** | Ubuntu 22.04 LTS or 24.04 LTS | Certified for kernel compatibility and OpenSSH 9.x behaviors. |
+| **Instance Type** | AWS `t2.large` (2 vCPUs, 8 GB Memory) | Prevents Node.js Out-Of-Memory (OOM) errors during heavy DAST sweeps. |
+| **Storage** | Minimum 20 GB gp2/gp3 SSD | Accommodates Node modules, OS file backups, and heavy log retention. |
 
 ### Prerequisite: AWS Security Group (Firewall)
 Before deploying, you **MUST** open the following inbound ports in your AWS EC2 Security Group:
-* **Port 22 (TCP):** SSH (Standard server access)
-* **Port 5000 (TCP):** Backend API & WebSocket Orchestrator
-* **Port 5173 (TCP):** Frontend React Dashboard
-* **Port 80 (TCP):** Required only if you intend to issue real Let's Encrypt IP-Certificates (HTTP-01 ACME Challenge).
+
+| Port | Protocol | Purpose | Required For |
+|---|---|---|---|
+| **22** | TCP | SSH Access | Remote server management and command-line execution. |
+| **5000** | TCP | Backend API & WebSocket | Live streaming of terminal logs to the frontend orchestrator. |
+| **5173** | TCP | React Dashboard | Accessing the SOC Pulse graphical user interface. |
+| **80** | TCP | HTTP-01 ACME Challenge | *Optional:* Only required for issuing Let's Encrypt IPv4 Certificates. |
 
 ### Step 1: Clone the Repository
 SSH into your Ubuntu Server and switch to the root user, then clone the repository:

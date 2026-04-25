@@ -34,23 +34,23 @@ const Sidebar = ({ activeView, setActiveView }) => {
         
         <div className="nav-group">
           <p className="nav-label">MODULES</p>
-          <a href="#" className={`nav-item ${activeView === 'module-1' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveView('module-1'); }}>
+          <a href="#" className={`nav-item ${activeView === 'doc-1' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveView('doc-1'); }}>
             <span className="icon">🛡️</span>
             Supply Chain Defense
           </a>
-          <a href="#" className={`nav-item ${activeView === 'module-2' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveView('module-2'); }}>
+          <a href="#" className={`nav-item ${activeView === 'doc-2' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveView('doc-2'); }}>
             <span className="icon">🌐</span>
             Web App Scanner
           </a>
-          <a href="#" className={`nav-item ${activeView === 'module-3' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveView('module-3'); }}>
+          <a href="#" className={`nav-item ${activeView === 'doc-3' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveView('doc-3'); }}>
             <span className="icon">🔐</span>
             System Endpoint Hardening
           </a>
-          <a href="#" className={`nav-item ${activeView === 'module-4' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveView('module-4'); }}>
+          <a href="#" className={`nav-item ${activeView === 'doc-4' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveView('doc-4'); }}>
             <span className="icon">🩹</span>
             Autonomous Remediation
           </a>
-          <a href="#" className={`nav-item ${activeView === 'module-5' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveView('module-5'); }}>
+          <a href="#" className={`nav-item ${activeView === 'doc-5' ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); setActiveView('doc-5'); }}>
             <span className="icon">🔑</span>
             Machine IP Cryptography
           </a>

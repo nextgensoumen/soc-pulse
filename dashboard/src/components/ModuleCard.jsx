@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { openReport } from '../utils/reportGenerator';
 
-const ModuleCard = ({ id, title, description, icon, status, threatLevel, isRunning, socket, backendUrl, onStatusRefresh, onShowDetails }) => {
+const ModuleCard = ({ id, title, description, icon, status, threatLevel, isRunning, socket, backendUrl, onStatusRefresh, onShowDetails, onShowDocs }) => {
   const [logs, setLogs] = useState([]);
   const [showLogs, setShowLogs] = useState(false);
   const logEndRef = useRef(null);
@@ -126,6 +126,13 @@ const ModuleCard = ({ id, title, description, icon, status, threatLevel, isRunni
           onClick={() => setShowLogs(!showLogs)}
         >
           {showLogs ? "Hide Logs" : "Show Logs"}
+        </button>
+        <button 
+          className="btn-secondary" 
+          onClick={onShowDocs}
+          title="View Deep-Dive Module Documentation"
+        >
+          📖 Docs
         </button>
         {logs.length > 0 && !isRunning && (
           <button

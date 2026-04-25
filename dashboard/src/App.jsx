@@ -184,6 +184,7 @@ function App() {
                   backendUrl={backendUrl}
                   onStatusRefresh={fetchModuleStatuses}
                   onShowDetails={handleShowDetails}
+                  onShowDocs={() => setActiveView('doc-' + mod.id)}
                 />
               ))}
             </div>

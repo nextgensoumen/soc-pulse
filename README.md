@@ -2,7 +2,7 @@
   <img src="./dashboard/public/soc-pulse-logo.png" alt="SOC Pulse Logo" width="160" />
   <h1>SOC Pulse v3.0</h1>
   <p><b>Automated Cloud Security Command Center</b></p>
-  <p><i>Architected & Developed by <a href="https://www.linkedin.com/in/soumen-bhunia/">Soumen Bhunia</a></i></p>
+  <p><i>Engineered by <b>Project ULTRON</b> | Lead Architect: <a href="https://www.linkedin.com/in/soumen-bhunia/">Soumen Bhunia</a></i></p>
 </div>
 
 <div align="center">
@@ -304,8 +304,11 @@ SOC Pulse integrates and builds upon several specialized open-source security to
 
 ---
 
-## 👨‍💻 Creator & Lead Developer
+## ⚡ Project ULTRON
 
+**SOC Pulse** is engineered and maintained by **Project ULTRON** — an advanced security development initiative.
+
+**👨‍💻 Lead Architect & Founder:**  
 **Soumen Bhunia**  
-The architect and primary developer behind the SOC Pulse Command Center.  
-🔗 **Connect on LinkedIn:** [linkedin.com/in/soumen-bhunia](https://www.linkedin.com/in/soumen-bhunia/)
+The primary engineer behind the SOC Pulse orchestration engine, the Glassmorphic React dashboard, and the core defense integrations.  
+🔗 **Connect with the Architect:** [LinkedIn Profile](https://www.linkedin.com/in/soumen-bhunia/)

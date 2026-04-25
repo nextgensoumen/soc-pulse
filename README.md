@@ -16,36 +16,19 @@
   </a>
 </div>
 
+<br/>
+
+<div align="center">
+  <img src="./soc_pulse_photos/main_dashboard_view.png" alt="SOC Pulse Main Dashboard" width="850" />
+</div>
+
+<br/>
+
 Welcome to **SOC Pulse**, a fully robust, automated, and centralized Security Operations Center (SOC) framework expressly engineered for Amazon Web Services (AWS) Ubuntu EC2 infrastructure.
 
 SOC Pulse consolidates five independent, highly-specialized security disciplines—ranging from Node.js supply-chain monitoring to deep-OS kernel hardening—into a single, highly intuitive Command Center interface. It drastically lowers the barrier to entry for securing cloud assets by giving system administrators a single pane of glass from which to trigger and monitor critical vulnerability assessments natively.
 
 Everything in SOC Pulse is **100% Live Data**. There is zero mock data. All scan history, threat verdicts, module status, and system info are dynamically pulled from real-time execution outputs directly on your server.
-
----
-
-## 📸 SOC Pulse UI Showcase
-
-<div align="center">
-  <img src="./soc_pulse_photos/main_dashboard_view.png" alt="Main Dashboard View" />
-  <p><i>The Main Dashboard providing a high-level overview of all integrated security modules.</i></p>
-  <br/>
-  
-  <img src="./soc_pulse_photos/command_center_view.png" alt="Command Center Execution" />
-  <p><i>Live module execution and tracking directly from the Command Center.</i></p>
-  <br/>
-
-  <img src="./soc_pulse_photos/Raw_Terminal_Logs.png" alt="Live Terminal Logs" />
-  <p><i>Real-time, buffered WebSocket terminal logs streaming natively from the Ubuntu OS backend.</i></p>
-  <br/>
-
-  <img src="./soc_pulse_photos/show_details_view.png" alt="Wazuh-style Details View" />
-  <p><i>Deep-dive forensic details and vulnerability metrics parsed into actionable insights.</i></p>
-  <br/>
-
-  <img src="./soc_pulse_photos/Documentation_view.png" alt="In-App Documentation" />
-  <p><i>Fully integrated, offline documentation mapped to every security module.</i></p>
-</div>
 
 ---
 
@@ -89,6 +72,27 @@ It is built for developers and system administrators who want enterprise-grade S
 > 🧩 **[Deep Dive: Explaining the 5 Security Modules →](./SECURITY_MODULES.md)**
 >
 > *Includes: A detailed breakdown of every module, why it's needed, how it defends the OS, and exactly what data it feeds to the Dashboard.*
+
+---
+
+## 📸 Platform Visuals & Features
+
+<div align="center">
+  <img src="./soc_pulse_photos/command_center_view.png" alt="Command Center Status View" width="850" />
+  <p><em><b>Command Center:</b> Real-time status tracking and execution of all 5 security modules.</em></p>
+  <br/>
+
+  <img src="./soc_pulse_photos/show_details_view.png" alt="Module Results & Details" width="850" />
+  <p><em><b>Wazuh-Style Reporting:</b> Automatically categorizes live execution data into clear "Problems Found" and "Passed" metrics.</em></p>
+  <br/>
+
+  <img src="./soc_pulse_photos/Raw_Terminal_Logs.png" alt="Raw Forensic Logs" width="850" />
+  <p><em><b>Live Terminal Output:</b> Full forensic audit transparency without requiring direct SSH access to the machine.</em></p>
+  <br/>
+
+  <img src="./soc_pulse_photos/Documentation_view.png" alt="Built-in Documentation" width="850" />
+  <p><em><b>Integrated Deep-Dive Docs:</b> Explains exactly what each module does, why it's necessary, and what to look for.</em></p>
+</div>
 
 ---
 
